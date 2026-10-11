@@ -5,6 +5,7 @@
 
 <mapper namespace="com.nemall.product.mapper.ProductMapper">
 
+    <!-- 将数据库字段映射到商品卡片，显式处理封面地址、销量与 Java 属性名的差异。 -->
     <resultMap id="productCardMap"
                type="com.nemall.product.vo.ProductCardVO">
         <id column="id" property="id"/>
@@ -14,6 +15,10 @@
         <result column="sales_count" property="sales"/>
     </resultMap>
 
+    <!--
+        仅查询已上架（status=1）且未删除的商品。销量相同时按 ID 升序，保证相同数据下顺序稳定。
+        limit 使用 MyBatis 参数绑定，由业务层校验为正数后传入。
+    -->
     <select id="selectTopSales" resultMap="productCardMap">
         SELECT
         id,

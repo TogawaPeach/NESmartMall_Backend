@@ -1,6 +1,7 @@
 spring:
   application:
     name: mall-product-service
+  # 默认从环境变量读取数据库配置；激活 local 后使用本机 application-local.yaml 中的值。
   datasource:
     url: ${MYSQL_URL}
     username: ${MYSQL_USERNAME}
@@ -8,6 +9,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 mybatis:
+  # 加载 Mapper XML；其 namespace 和语句 ID 对应 Mapper 接口及方法。
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.nemall.product.entity
   configuration:
@@ -17,9 +19,11 @@ mybatis:
 logging:
   level:
     root: INFO
+    # 开发调试：Mapper 输出 SQL 及参数，业务层输出查询结果。
     com.nemall.product.mapper: DEBUG
     com.nemall.product.service: DEBUG
     com.nemall.product.controller: DEBUG
 
 server:
+  # 与网关中的 PRODUCT_SERVICE_URL 保持一致。
   port: ${PRODUCT_SERVICE_PORT:8082}
