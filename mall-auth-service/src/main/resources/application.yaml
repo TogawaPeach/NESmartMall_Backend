@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: mall-auth-service
+
+server:
+  port: ${AUTH_SERVICE_PORT:8081}

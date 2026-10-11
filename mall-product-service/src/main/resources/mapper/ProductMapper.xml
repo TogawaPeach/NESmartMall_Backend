@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.nemall.product.mapper.ProductMapper">
+
+    <resultMap id="productCardMap"
+               type="com.nemall.product.vo.ProductCardVO">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="cover_image_url" property="coverUrl"/>
+        <result column="price" property="price"/>
+        <result column="sales_count" property="sales"/>
+    </resultMap>
+
+    <select id="selectTopSales" resultMap="productCardMap">
+        SELECT
+        id,
+        name,
+        cover_image_url,
+        price,
+        sales_count
+        FROM product
+        WHERE status = 1
+        AND is_deleted = 0
+        ORDER BY sales_count DESC, id ASC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
