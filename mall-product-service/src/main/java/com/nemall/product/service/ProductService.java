@@ -10,12 +10,13 @@ import java.util.List;
 public interface ProductService {
 
     /**
-     * 按销量降序查询未删除且已上架（status=1）的商品，销量相同时按商品 ID 升序排列。
+     * 查询已上架且未删除的商品。
      *
-     * @param sort 排序方式，当前仅支持 {@code sales_desc}
-     * @param limit 最多返回的商品数量，必须大于 0
-     * @return 商品卡片列表；无匹配商品时返回空列表
-     * @throws IllegalArgumentException 排序方式不受支持，或 limit 为 null、零或负数
+     * @param sort 排序方式，目前只支持 sales_desc
+     * @param limit 返回数量，范围为 1～8
+     * @param categoryId 分类 ID，null 表示全部，否则范围为 1～5
+     * @return 按销量降序、同销量按商品 ID 升序排列的商品列表
      */
-    List<ProductCardVO> listProducts(String sort, Integer limit);
+    List<ProductCardVO> listProducts(
+            String sort, Integer limit, Long categoryId);
 }

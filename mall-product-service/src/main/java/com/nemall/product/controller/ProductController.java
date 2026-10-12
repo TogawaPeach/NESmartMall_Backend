@@ -5,7 +5,9 @@ import com.nemall.product.service.ProductService;
 import com.nemall.product.vo.ProductCardVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 
@@ -31,10 +33,11 @@ public class ProductController {
     @GetMapping
     public Result<List<ProductCardVO>> listProducts(
             @RequestParam(name = "sort", defaultValue = "sales_desc") String sort,
-            @RequestParam(name = "limit", defaultValue = "10") Integer limit) {
+            @RequestParam(name = "limit", defaultValue = "8") Integer limit,
+            @RequestParam(name = "categoryId", required = false) Long categoryId){
 
         List<ProductCardVO> products =
-                productService.listProducts(sort, limit);
+                productService.listProducts(sort, limit,categoryId);
 
         // 200 是响应体中的业务码，HTTP 状态由 Spring MVC 单独管理。
         Result<List<ProductCardVO>> result = new Result<>(200, "OK", products);
@@ -42,4 +45,5 @@ public class ProductController {
 
         return result;
     }
+
 }

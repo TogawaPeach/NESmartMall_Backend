@@ -16,5 +16,7 @@ public interface ProductMapper {
      * @param limit 查询上限，由业务层保证大于 0；名称对应 XML 中的绑定参数
      * @return 按销量降序、商品 ID 升序排列的商品卡片列表
      */
-    List<ProductCardVO> selectTopSales(@Param("limit") Integer limit);
+    List<ProductCardVO> selectTopSales(@Param("limit") Integer limit,
+                                       @Param("categoryId") Long categoryId);
+
 }

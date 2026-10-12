@@ -29,6 +29,11 @@
         FROM product
         WHERE status = 1
         AND is_deleted = 0
+
+        <if test="categoryId != null">
+            AND category_id = #{categoryId}
+        </if>
+
         ORDER BY sales_count DESC, id ASC
         LIMIT #{limit}
     </select>
