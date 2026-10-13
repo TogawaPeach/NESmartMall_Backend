@@ -52,10 +52,12 @@ public class ProductController {
         @RequestParam(name = "categoryId", required = false)
         Long categoryId,
         @RequestParam(name = "pageNum", defaultValue = "1")
-        Integer pageNum) {
+        Integer pageNum,
+        @RequestParam(name = "keyword", required = false)
+         String keyword) {
 
             ProductPageVO pageVO =
-                    productService.listProductsByPage(categoryId, pageNum);
+                    productService.listProductsByPage(categoryId, pageNum, keyword);
 
             return new Result<>(200, "OK", pageVO);
     }

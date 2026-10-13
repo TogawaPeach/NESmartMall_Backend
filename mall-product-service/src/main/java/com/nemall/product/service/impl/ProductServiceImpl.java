@@ -32,24 +32,27 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductPageVO listProductsByPage(
-            Long categoryId, Integer pageNum) {
+            Long categoryId, Integer pageNum, String keyword) {
 
         if (pageNum == null || pageNum < 1) {
             throw new IllegalArgumentException("pageNum 必须大于 0");
         }
 
+        // 去掉首尾空格；未传关键词或只有空格时，不添加搜索条件
+        String searchKeyword = keyword == null ? null : keyword.trim();
+        if (searchKeyword != null && searchKeyword.isEmpty()) {
+            searchKeyword = null;
+        }
+
         try {
-            // 当前页、每页 12 件、查询商品总数
+            // 当前页、每页 12 件，同时查询符合条件的总数
             PageHelper.startPage(pageNum, 12, true)
                     .setReasonable(false);
 
-            // 紧接着执行需要分页的 MyBatis 查询
             List<ProductCardVO> products =
-                    productMapper.selectProducts(categoryId);
+                    productMapper.selectProducts(categoryId, searchKeyword);
 
-            // 从查询结果中取得商品列表和总数
-            PageInfo<ProductCardVO> pageInfo =
-                    new PageInfo<>(products);
+            PageInfo<ProductCardVO> pageInfo = new PageInfo<>(products);
 
             return new ProductPageVO(
                     pageInfo.getList(),

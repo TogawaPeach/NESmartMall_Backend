@@ -53,6 +53,10 @@
             AND category_id = #{categoryId}
         </if>
 
+        <if test="keyword != null and keyword != ''">
+            AND LOCATE(#{keyword}, name) > 0
+        </if>
+
         ORDER BY sales_count DESC, id ASC
     </select>
 

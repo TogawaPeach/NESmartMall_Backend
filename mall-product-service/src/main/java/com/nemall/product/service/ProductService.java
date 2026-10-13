@@ -21,5 +21,6 @@ public interface ProductService {
     List<ProductCardVO> listProducts(
             String sort, Integer limit, Long categoryId);
 
-    ProductPageVO listProductsByPage(Long categoryId, Integer pageNum);
+    ProductPageVO listProductsByPage(
+            Long categoryId, Integer pageNum, String keyword);
 }

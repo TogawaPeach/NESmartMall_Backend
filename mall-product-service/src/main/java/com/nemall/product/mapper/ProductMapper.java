@@ -20,6 +20,7 @@ public interface ProductMapper {
                                        @Param("categoryId") Long categoryId);
 
     List<ProductCardVO> selectProducts(
-            @Param("categoryId") Long categoryId);
+            @Param("categoryId") Long categoryId,
+            @Param("keyword") String keyword);
 
 }
