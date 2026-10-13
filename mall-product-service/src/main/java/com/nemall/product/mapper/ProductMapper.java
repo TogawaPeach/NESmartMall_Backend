@@ -19,4 +19,7 @@ public interface ProductMapper {
     List<ProductCardVO> selectTopSales(@Param("limit") Integer limit,
                                        @Param("categoryId") Long categoryId);
 
+    List<ProductCardVO> selectProducts(
+            @Param("categoryId") Long categoryId);
+
 }

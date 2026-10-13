@@ -3,6 +3,7 @@ package com.nemall.product.controller;
 import com.nemall.common.response.Result;
 import com.nemall.product.service.ProductService;
 import com.nemall.product.vo.ProductCardVO;
+import com.nemall.product.vo.ProductPageVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +45,19 @@ public class ProductController {
 
 
         return result;
+    }
+
+    @GetMapping("/page")
+    public Result<ProductPageVO> listProductsByPage(
+        @RequestParam(name = "categoryId", required = false)
+        Long categoryId,
+        @RequestParam(name = "pageNum", defaultValue = "1")
+        Integer pageNum) {
+
+            ProductPageVO pageVO =
+                    productService.listProductsByPage(categoryId, pageNum);
+
+            return new Result<>(200, "OK", pageVO);
     }
 
 }

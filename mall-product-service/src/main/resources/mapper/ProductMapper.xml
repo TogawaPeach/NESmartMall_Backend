@@ -38,4 +38,22 @@
         LIMIT #{limit}
     </select>
 
+    <select id="selectProducts" resultMap="productCardMap">
+        SELECT
+        id,
+        name,
+        cover_image_url,
+        price,
+        sales_count
+        FROM product
+        WHERE status = 1
+        AND is_deleted = 0
+
+        <if test="categoryId != null">
+            AND category_id = #{categoryId}
+        </if>
+
+        ORDER BY sales_count DESC, id ASC
+    </select>
+
 </mapper>

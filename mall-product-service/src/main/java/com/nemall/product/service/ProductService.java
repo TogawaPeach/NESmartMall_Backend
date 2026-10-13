@@ -1,6 +1,7 @@
 package com.nemall.product.service;
 
 import com.nemall.product.vo.ProductCardVO;
+import com.nemall.product.vo.ProductPageVO;
 
 import java.util.List;
 
@@ -19,4 +20,6 @@ public interface ProductService {
      */
     List<ProductCardVO> listProducts(
             String sort, Integer limit, Long categoryId);
+
+    ProductPageVO listProductsByPage(Long categoryId, Integer pageNum);
 }
