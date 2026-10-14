@@ -18,6 +18,11 @@
             <groupId>com.nemall</groupId>
             <artifactId>mall-common</artifactId>
         </dependency>
+        <!-- 提供 JWT 验签和解析能力，版本由父项目管理 -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway-server-webmvc</artifactId>
