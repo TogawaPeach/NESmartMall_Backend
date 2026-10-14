@@ -1,6 +1,19 @@
 spring:
   application:
     name: mall-auth-service
+  # 激活 local 后，由本机 application-local.yaml 提供数据库配置。
+  datasource:
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
 server:
   port: ${AUTH_SERVICE_PORT:8081}
+jwt:
+  secret: ${JWT_SECRET}
+  expires-in: 86400
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
