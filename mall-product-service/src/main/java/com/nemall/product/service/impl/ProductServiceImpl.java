@@ -2,13 +2,18 @@ package com.nemall.product.service.impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.nemall.product.entity.ProductDetailData;
+import com.nemall.product.exception.ProductBusinessException;
 import com.nemall.product.mapper.ProductMapper;
 import com.nemall.product.service.ProductService;
 import com.nemall.product.vo.ProductCardVO;
+import com.nemall.product.vo.ProductDetailVO;
 import com.nemall.product.vo.ProductPageVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 
@@ -21,6 +26,8 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
+
+    private static final JsonMapper JSON = JsonMapper.builder().build();
 
     /** {@inheritDoc} */
     @Override
@@ -62,5 +69,33 @@ public class ProductServiceImpl implements ProductService {
         } finally {
             PageHelper.clearPage();
         }
+    }
+
+    @Override
+    public ProductDetailVO getProductDetail(String id) {
+        ProductDetailData data =
+                productMapper.selectProductDetailById(id);
+
+        if (data == null) {
+            throw new ProductBusinessException(404, "商品不存在");
+        }
+
+        List<String> images = data.getDetailImageUrls() == null
+                ? List.of()
+                : JSON.readValue(
+                data.getDetailImageUrls(),
+                new TypeReference<List<String>>() {}
+        );
+
+        return new ProductDetailVO(
+                data.getId().toString(),
+                data.getName(),
+                data.getModel(),
+                data.getCoverImageUrl(),
+                data.getPrice(),
+                data.getSalesCount(),
+                data.getStock(),
+                images
+        );
     }
 }

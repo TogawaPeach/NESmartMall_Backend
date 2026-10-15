@@ -3,12 +3,11 @@ package com.nemall.product.controller;
 import com.nemall.common.response.Result;
 import com.nemall.product.service.ProductService;
 import com.nemall.product.vo.ProductCardVO;
+import com.nemall.product.vo.ProductDetailVO;
 import com.nemall.product.vo.ProductPageVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 
@@ -60,6 +59,15 @@ public class ProductController {
                     productService.listProductsByPage(categoryId, pageNum, keyword);
 
             return new Result<>(200, "OK", pageVO);
+    }
+
+    @GetMapping("/{id}")
+    public Result<ProductDetailVO> getProductDetail(
+            @PathVariable("id") String id) {
+
+        ProductDetailVO detail = productService.getProductDetail(id);
+
+        return new Result<>(200, "OK", detail);
     }
 
 }

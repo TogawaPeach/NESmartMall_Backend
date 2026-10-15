@@ -1,6 +1,7 @@
 package com.nemall.product.service;
 
 import com.nemall.product.vo.ProductCardVO;
+import com.nemall.product.vo.ProductDetailVO;
 import com.nemall.product.vo.ProductPageVO;
 
 import java.util.List;
@@ -23,4 +24,12 @@ public interface ProductService {
 
     ProductPageVO listProductsByPage(
             Long categoryId, Integer pageNum, String keyword);
+
+    /**
+     * 查询商品详情入口。
+     *
+     * @param id 商品 ID，使用字符串接收，后续校验合法性
+     * @return 商品 ID 与对应的站内详情路径
+     */
+    ProductDetailVO getProductDetail(String id);
 }

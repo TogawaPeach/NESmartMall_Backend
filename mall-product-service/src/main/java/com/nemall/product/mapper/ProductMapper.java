@@ -1,6 +1,8 @@
 package com.nemall.product.mapper;
 
+import com.nemall.product.entity.ProductDetailData;
 import com.nemall.product.vo.ProductCardVO;
+import com.nemall.product.vo.ProductDetailVO;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -22,5 +24,7 @@ public interface ProductMapper {
     List<ProductCardVO> selectProducts(
             @Param("categoryId") Long categoryId,
             @Param("keyword") String keyword);
+
+    ProductDetailData selectProductDetailById(@Param("id") String id);
 
 }

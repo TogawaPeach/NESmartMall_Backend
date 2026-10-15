@@ -15,6 +15,7 @@
         <result column="sales_count" property="sales"/>
     </resultMap>
 
+
     <!--
         仅查询已上架（status=1）且未删除的商品。销量相同时按 ID 升序，保证相同数据下顺序稳定。
         limit 使用 MyBatis 参数绑定，由业务层校验为正数后传入。
@@ -58,6 +59,23 @@
         </if>
 
         ORDER BY sales_count DESC, id ASC
+    </select>
+
+    <select id="selectProductDetailById"
+            resultType="com.nemall.product.entity.ProductDetailData">
+        SELECT
+        id,
+        name,
+        model,
+        cover_image_url,
+        price,
+        sales_count,
+        stock,
+        detail_image_urls
+        FROM product
+        WHERE id = #{id}
+        AND status = 1
+        AND is_deleted = 0
     </select>
 
 </mapper>
