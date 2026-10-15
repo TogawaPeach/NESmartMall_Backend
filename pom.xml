@@ -19,6 +19,7 @@
         <module>mall-common</module>
         <module>mall-auth-service</module>
         <module>mall-product-service</module>
+        <module>mall-cart-service</module>
         <module>mall-gateway</module>
     </modules>
 
