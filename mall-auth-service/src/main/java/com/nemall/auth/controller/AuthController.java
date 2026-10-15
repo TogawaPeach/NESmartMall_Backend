@@ -1,6 +1,7 @@
 package com.nemall.auth.controller;
 
 import com.nemall.auth.dto.LoginDTO;
+import com.nemall.auth.dto.RegisterDTO;
 import com.nemall.auth.service.AuthService;
 import com.nemall.auth.vo.LoginVO;
 import com.nemall.common.response.Result;
@@ -38,6 +39,18 @@ public class AuthController {
 
         return ResponseEntity.ok(
                 new Result<>(200, "OK", loginVO)
+        );
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<Result<LoginVO>> register(
+            @RequestBody RegisterDTO registerDTO) {
+
+        // 创建账户，并返回 JWT 和用户信息
+        LoginVO loginVO = authService.register(registerDTO);
+
+        return ResponseEntity.ok(
+                new Result<>(200, "注册成功", loginVO)
         );
     }
 }

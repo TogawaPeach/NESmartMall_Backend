@@ -8,4 +8,6 @@ import org.apache.ibatis.annotations.Param;
 public interface AccountMapper {
 
     Account selectByAccount(@Param("account") String account);
+
+    int insert(Account account);
 }

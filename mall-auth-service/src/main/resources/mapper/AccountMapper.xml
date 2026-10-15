@@ -23,4 +23,24 @@
 
     </select>
 
+    <insert id="insert"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+
+        INSERT INTO account (
+        account,
+        nickname,
+        password_hash,
+        role
+        )
+        VALUES (
+        #{account},
+        #{nickname},
+        #{passwordHash},
+        #{role}
+        )
+
+    </insert>
+
 </mapper>
