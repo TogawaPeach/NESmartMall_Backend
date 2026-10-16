@@ -2,6 +2,34 @@ spring:
   application:
     name: mall-cart-service
 
+  cloud:
+    loadbalancer:
+      retry:
+        enabled: false
+
+    openfeign:
+      client:
+        config:
+          mall-product-service:
+            connectTimeout: 2000
+            readTimeout: 5000
+
+      httpclient:
+        max-connections: 100
+        max-connections-per-route: 20
+        time-to-live: 60
+        time-to-live-unit: seconds
+
+        hc5:
+          enabled: true
+          connection-request-timeout: 1
+          connection-request-timeout-unit: seconds
+          socket-timeout: 5
+          socket-timeout-unit: seconds
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+
 server:
   # 与网关中的 CART_SERVICE_URL 保持一致。
   port: ${CART_SERVICE_PORT:8083}

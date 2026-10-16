@@ -1,5 +1,6 @@
 package com.nemall.product.service;
 
+import com.nemall.api.dto.ProductSummaryDTO;
 import com.nemall.product.vo.ProductCardVO;
 import com.nemall.product.vo.ProductDetailVO;
 import com.nemall.product.vo.ProductPageVO;
@@ -32,4 +33,7 @@ public interface ProductService {
      * @return 商品 ID 与对应的站内详情路径
      */
     ProductDetailVO getProductDetail(String id);
+
+    /** 根据商品 ID 批量查询商品摘要。 */
+    List<ProductSummaryDTO> queryByIds(List<Long> ids);
 }

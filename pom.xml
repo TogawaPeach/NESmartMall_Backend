@@ -17,6 +17,7 @@
 
     <modules>
         <module>mall-common</module>
+        <module>mall-api</module>
         <module>mall-auth-service</module>
         <module>mall-product-service</module>
         <module>mall-cart-service</module>
@@ -28,6 +29,7 @@
         <spring-cloud.version>2025.1.3</spring-cloud.version>
         <mybatis-spring-boot.version>4.0.0</mybatis-spring-boot.version>
         <pagehelper.version>4.1.1</pagehelper.version>
+        <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
     </properties>
 
     <dependencies>
@@ -56,6 +58,18 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.nemall</groupId>
+                <artifactId>mall-api</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.nemall</groupId>

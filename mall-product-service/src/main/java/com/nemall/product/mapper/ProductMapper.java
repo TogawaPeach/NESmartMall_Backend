@@ -1,5 +1,6 @@
 package com.nemall.product.mapper;
 
+import com.nemall.api.dto.ProductSummaryDTO;
 import com.nemall.product.entity.ProductDetailData;
 import com.nemall.product.vo.ProductCardVO;
 import com.nemall.product.vo.ProductDetailVO;
@@ -26,5 +27,8 @@ public interface ProductMapper {
             @Param("keyword") String keyword);
 
     ProductDetailData selectProductDetailById(@Param("id") String id);
+
+    /** 批量查询商品摘要，保留下架和已删除商品供购物车判断状态。 */
+    List<ProductSummaryDTO> selectByIds(@Param("ids") List<Long> ids);
 
 }

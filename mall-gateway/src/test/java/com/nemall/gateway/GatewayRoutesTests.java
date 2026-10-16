@@ -3,6 +3,10 @@ package com.nemall.gateway;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -27,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -113,6 +118,56 @@ class GatewayRoutesTests {
         assertThat(send("GET", "/api/cart/items", "", "Bearer invalid-token").statusCode()).isEqualTo(401);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"CUSTOMER", "MERCHANT"})
+    void cartReceivesVerifiedIdentityInsteadOfForgedHeaders(String role) throws Exception {
+        HttpResponse<String> response = send("GET", "/api/cart", "",
+                "Bearer " + accessToken("42", List.of(role)),
+                "user-info", "999", "user-info", "888",
+                "user-role", "ADMIN", "user-role", "FORGED",
+                "X-Service-Token", "external-forged-value");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.headers().firstValue("X-Seen-User-Info")).contains("42");
+        assertThat(response.headers().firstValue("X-Seen-User-Role")).contains(role);
+        assertThat(response.headers().firstValue("X-Seen-Service-Token").orElse("")).isEmpty();
+    }
+
+    @Test
+    void publicRequestDropsForgedIdentityEvenWithInvalidToken() throws Exception {
+        HttpResponse<String> response = send("GET", "/api/products", "", "Bearer invalid-token",
+                "user-info", "999", "user-role", "MERCHANT",
+                "X-Service-Token", "external-forged-value");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.headers().firstValue("X-Seen-User-Info").orElse("")).isEmpty();
+        assertThat(response.headers().firstValue("X-Seen-User-Role").orElse("")).isEmpty();
+        assertThat(response.headers().firstValue("X-Seen-Service-Token").orElse("")).isEmpty();
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidIdentityClaims")
+    void cartRejectsTokensWithInvalidIdentityClaims(String subject, Object roles) throws Exception {
+        HttpResponse<String> response = send("GET", "/api/cart", "",
+                "Bearer " + accessToken(subject, roles));
+
+        assertThat(response.statusCode()).isEqualTo(401);
+    }
+
+    private static Stream<Arguments> invalidIdentityClaims() {
+        return Stream.of(
+                Arguments.of("0", List.of("CUSTOMER")),
+                Arguments.of("not-an-id", List.of("CUSTOMER")),
+                Arguments.of("9223372036854775808", List.of("CUSTOMER")),
+                Arguments.of("42", null),
+                Arguments.of("42", List.of()),
+                Arguments.of("42", List.of("CUSTOMER", "MERCHANT")),
+                Arguments.of("42", List.of("ADMIN")),
+                Arguments.of("42", "CUSTOMER"),
+                Arguments.of("42", List.of(17))
+        );
+    }
+
     @Test
     void similarPathDoesNotMatchCartRoute() throws Exception {
         assertThat(send("GET", "/api/cartography", "").statusCode()).isEqualTo(404);
@@ -127,7 +182,8 @@ class GatewayRoutesTests {
         return send(method, path, body, AUTHORIZATION);
     }
 
-    private HttpResponse<String> send(String method, String path, String body, String authorization) throws Exception {
+    private HttpResponse<String> send(String method, String path, String body, String authorization,
+                                      String... headers) throws Exception {
         HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
                 .timeout(Duration.ofSeconds(10))
                 .header("Content-Type", "application/json")
@@ -135,28 +191,36 @@ class GatewayRoutesTests {
         if (authorization != null) {
             builder.header("Authorization", authorization);
         }
+        if (headers.length > 0) {
+            builder.headers(headers);
+        }
         try (HttpClient client = HttpClient.newHttpClient()) {
             return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         }
     }
 
     private static String accessToken() {
+        return accessToken("1", List.of("CUSTOMER"));
+    }
+
+    private static String accessToken(String subject, Object roles) {
         try {
             byte[] key = MessageDigest.getInstance("SHA-256").digest(JWT_SECRET.getBytes(StandardCharsets.UTF_8));
             var encoder = NimbusJwtEncoder.withSecretKey(new SecretKeySpec(key, "HmacSHA256"))
                     .algorithm(MacAlgorithm.HS256)
                     .build();
             Instant now = Instant.now();
-            JwtClaimsSet claims = JwtClaimsSet.builder()
-                    .subject("1")
-                    .claim("roles", List.of("CUSTOMER"))
+            JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
+                    .subject(subject)
                     .issuer("NESmartMall")
                     .audience(List.of("nesmartmall-api"))
                     .issuedAt(now)
-                    .expiresAt(now.plusSeconds(3600))
-                    .build();
+                    .expiresAt(now.plusSeconds(3600));
+            if (roles != null) {
+                claims.claim("roles", roles);
+            }
             return encoder.encode(JwtEncoderParameters.from(
-                    JwsHeader.with(MacAlgorithm.HS256).type("JWT").build(), claims)).getTokenValue();
+                    JwsHeader.with(MacAlgorithm.HS256).type("JWT").build(), claims.build())).getTokenValue();
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException(exception);
         }
@@ -176,6 +240,12 @@ class GatewayRoutesTests {
                             + "|" + exchange.getRequestHeaders().getFirst("Authorization") + "|" + body;
                     byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
                     exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=UTF-8");
+                    exchange.getResponseHeaders().set("X-Seen-User-Info",
+                            String.join(",", exchange.getRequestHeaders().getOrDefault("user-info", List.of())));
+                    exchange.getResponseHeaders().set("X-Seen-User-Role",
+                            String.join(",", exchange.getRequestHeaders().getOrDefault("user-role", List.of())));
+                    exchange.getResponseHeaders().set("X-Seen-Service-Token",
+                            String.join(",", exchange.getRequestHeaders().getOrDefault("X-Service-Token", List.of())));
                     exchange.sendResponseHeaders(200, bytes.length);
                     exchange.getResponseBody().write(bytes);
                 }

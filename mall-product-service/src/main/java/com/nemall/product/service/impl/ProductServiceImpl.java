@@ -2,6 +2,7 @@ package com.nemall.product.service.impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.nemall.api.dto.ProductSummaryDTO;
 import com.nemall.product.entity.ProductDetailData;
 import com.nemall.product.exception.ProductBusinessException;
 import com.nemall.product.mapper.ProductMapper;
@@ -69,6 +70,15 @@ public class ProductServiceImpl implements ProductService {
         } finally {
             PageHelper.clearPage();
         }
+    }
+
+    @Override
+    public List<ProductSummaryDTO> queryByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        return productMapper.selectByIds(ids);
     }
 
     @Override

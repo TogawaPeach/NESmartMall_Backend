@@ -19,7 +19,11 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
+/**
+ * 在网关转发前清除外部身份头，为受保护请求恢复已验证的账户身份。
+ */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @RequiredArgsConstructor
@@ -37,45 +41,84 @@ public class IdentityFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
+        MutableHeaderRequest forwardedRequest =
+                new MutableHeaderRequest(request);
+
+        // 清除外部传入的身份头
+        forwardedRequest.removeHeader("user-info");
+        forwardedRequest.removeHeader("user-role");
+        forwardedRequest.removeHeader("X-Service-Token");
+
         boolean publicRequest = PublicPaths.isPublic(
                 request.getMethod(),
                 request.getRequestURI()
         );
 
-        // 公开接口跳过校验；受保护接口校验失败则结束请求
-        if (!publicRequest && !hasValidToken(request)) {
+        // 公开接口继续匿名访问
+        if (publicRequest) {
+            filterChain.doFilter(forwardedRequest, response);
+            return;
+        }
+
+        Jwt jwt = readJwt(request);
+
+        if (jwt == null) {
             unauthorized(response);
             return;
         }
 
-        // 继续后续过滤链，由网关转发请求
-        filterChain.doFilter(request, response);
+        // 从已验证的 JWT 提取身份，覆盖写入内部请求头
+        forwardedRequest.setHeader("user-info", jwt.getSubject());
+        forwardedRequest.setHeader(
+                "user-role",
+                jwt.getClaimAsStringList("roles").getFirst()
+        );
+
+        filterChain.doFilter(forwardedRequest, response);
     }
 
-    private boolean hasValidToken(HttpServletRequest request) {
+    /** 校验成功返回 JWT，缺失或不合法时返回 null，由调用处统一响应 401。 */
+    private Jwt readJwt(HttpServletRequest request) {
         String authorization =
                 request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        // 缺少请求头或不是 Bearer 格式
         if (authorization == null
                 || !authorization.regionMatches(
-                true, 0,
-                BEARER_PREFIX, 0,
-                BEARER_PREFIX.length())) {
-            return false;
+                        true, 0,
+                        BEARER_PREFIX, 0,
+                        BEARER_PREFIX.length())) {
+            return null;
         }
 
-        String token =
-                authorization.substring(BEARER_PREFIX.length());
+        String token = authorization.substring(BEARER_PREFIX.length());
 
         try {
-            // 校验签名和时间声明；空 token 也会校验失败
             Jwt jwt = jwtDecoder.decode(token);
 
-            // 要求 token 必须包含过期时间
-            return jwt.getExpiresAt() != null;
-        } catch (JwtException exception) {
-            return false;
+            String userId = jwt.getSubject();
+
+            // 账户 ID 必须是 Long 范围内的正整数
+            if (jwt.getExpiresAt() == null
+                    || userId == null
+                    || !userId.matches("[1-9][0-9]*")
+                    || Long.parseLong(userId) <= 0) {
+                return null;
+            }
+
+            // roles 必须是数组，且仅包含一个已知角色
+            Object rolesClaim = jwt.getClaims().get("roles");
+            if (!(rolesClaim instanceof List<?> roles) || roles.size() != 1) {
+                return null;
+            }
+
+            Object role = roles.getFirst();
+            if (!"CUSTOMER".equals(role) && !"MERCHANT".equals(role)) {
+                return null;
+            }
+
+            return jwt;
+        } catch (JwtException | IllegalArgumentException exception) {
+            return null;
         }
     }
 
