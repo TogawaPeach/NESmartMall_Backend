@@ -11,4 +11,13 @@ public interface CartMapper {
 
     List<CartItem> selectByUserId(
             @Param("userId") Long userId);
+
+    CartItem selectByUserIdAndProductId(
+            @Param("userId") Long userId,
+            @Param("productId") Long productId);
+
+    int addOrIncrement(
+            @Param("userId") Long userId,
+            @Param("productId") Long productId,
+            @Param("quantity") Integer quantity);
 }

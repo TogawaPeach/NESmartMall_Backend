@@ -3,6 +3,7 @@ package com.nemall.cart.service.impl;
 import com.nemall.api.client.ProductClient;
 import com.nemall.api.dto.ProductBatchQueryDTO;
 import com.nemall.api.dto.ProductSummaryDTO;
+import com.nemall.cart.dto.AddCartItemDTO;
 import com.nemall.cart.entity.CartItem;
 import com.nemall.cart.mapper.CartMapper;
 import com.nemall.cart.service.CartService;
@@ -64,6 +65,47 @@ public class CartServiceImpl implements CartService {
                 .toList();
 
         return new CartVO(items);
+    }
+
+    @Override
+    public void addToCart(AddCartItemDTO request) {
+        Long userId = UserContext.getUserId();
+        Long productId = Long.valueOf(request.getProductId());
+        Integer quantity = request.getQuantity();
+
+        ProductBatchQueryDTO query = new ProductBatchQueryDTO();
+        query.setIds(List.of(productId));
+
+        Result<List<ProductSummaryDTO>> result =
+                productClient.queryByIds(query);
+
+        if (result == null
+                || !Integer.valueOf(200).equals(result.getCode())
+                || result.getData() == null) {
+            throw new IllegalStateException("商品信息查询失败");
+        }
+
+        ProductSummaryDTO product = result.getData().isEmpty()
+                ? null : result.getData().getFirst();
+
+        CartItem existing =
+                cartMapper.selectByUserIdAndProductId(userId, productId);
+
+        long totalQuantity = (existing == null ? 0L : existing.getQuantity())
+                + quantity;
+
+        if (product == null
+                || product.getStatus() != 1
+                || product.getIsDeleted() != 0
+                || product.getPrice() == null
+                || totalQuantity > product.getStock()
+                || totalQuantity > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                    "商品不可购买、库存不足或加入数量超限"
+            );
+        }
+
+        cartMapper.addOrIncrement(userId, productId, quantity);
     }
 
     private CartItemVO buildItem(

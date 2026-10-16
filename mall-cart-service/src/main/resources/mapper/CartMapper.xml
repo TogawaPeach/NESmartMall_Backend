@@ -18,4 +18,25 @@
         WHERE user_id = #{userId}
     </select>
 
+    <select id="selectByUserIdAndProductId"
+            resultType="com.nemall.cart.entity.CartItem">
+        SELECT
+            id,
+            user_id AS userId,
+            product_id AS productId,
+            quantity,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM cart_item
+        WHERE user_id = #{userId}
+          AND product_id = #{productId}
+    </select>
+
+    <insert id="addOrIncrement">
+        INSERT INTO cart_item (user_id, product_id, quantity)
+        VALUES (#{userId}, #{productId}, #{quantity})
+        ON DUPLICATE KEY UPDATE
+            quantity = quantity + #{quantity}
+    </insert>
+
 </mapper>
