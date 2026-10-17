@@ -4,6 +4,7 @@ import com.nemall.api.client.ProductClient;
 import com.nemall.api.dto.ProductBatchQueryDTO;
 import com.nemall.api.dto.ProductSummaryDTO;
 import com.nemall.cart.dto.AddCartItemDTO;
+import com.nemall.cart.dto.UpdateCartQuantityDTO;
 import com.nemall.cart.entity.CartItem;
 import com.nemall.cart.mapper.CartMapper;
 import com.nemall.cart.service.CartService;
@@ -106,6 +107,66 @@ public class CartServiceImpl implements CartService {
         }
 
         cartMapper.addOrIncrement(userId, productId, quantity);
+    }
+
+    @Override
+    public void updateQuantity(
+            String productIdText,
+            UpdateCartQuantityDTO request) {
+
+        if (request == null
+                || request.getQuantity() == null
+                || request.getQuantity() <= 0) {
+            throw new IllegalArgumentException(
+                    "商品数量不能为空，且必须大于 0");
+        }
+
+        Integer quantity = request.getQuantity();
+        Long productId;
+
+        try {
+            productId = Long.valueOf(productIdText);
+        } catch (NumberFormatException exception) {
+            productId = null;
+        }
+
+        if (productId == null || productId <= 0) {
+            throw new IllegalArgumentException(
+                    "商品 ID 必须是有效的正整数");
+        }
+
+        Long userId = UserContext.getUserId();
+
+        int affectedRows = cartMapper.updateQuantity(
+                userId, productId, quantity);
+
+        // 相同数量可能导致更新行数为 0，需区分记录不存在的情况。
+        if (affectedRows == 0
+                && cartMapper.selectByUserIdAndProductId(
+                        userId, productId) == null) {
+            throw new IllegalArgumentException("购物车中不存在该商品");
+        }
+    }
+
+    @Override
+    public void deleteCartItem(String productIdText) {
+        Long productId;
+
+        try {
+            productId = Long.valueOf(productIdText);
+        } catch (NumberFormatException exception) {
+            productId = null;
+        }
+
+        if (productId == null || productId <= 0) {
+            throw new IllegalArgumentException(
+                    "商品 ID 必须是有效的正整数");
+        }
+
+        Long userId = UserContext.getUserId();
+
+        // 记录已不存在时也视为成功，允许重复删除。
+        cartMapper.deleteByUserIdAndProductId(userId, productId);
     }
 
     private CartItemVO buildItem(

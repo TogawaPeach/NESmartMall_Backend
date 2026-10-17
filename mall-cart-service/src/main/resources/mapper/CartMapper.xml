@@ -39,4 +39,17 @@
             quantity = quantity + #{quantity}
     </insert>
 
+    <update id="updateQuantity">
+        UPDATE cart_item
+        SET quantity = #{quantity}
+        WHERE user_id = #{userId}
+          AND product_id = #{productId}
+    </update>
+
+    <delete id="deleteByUserIdAndProductId">
+        DELETE FROM cart_item
+        WHERE user_id = #{userId}
+          AND product_id = #{productId}
+    </delete>
+
 </mapper>

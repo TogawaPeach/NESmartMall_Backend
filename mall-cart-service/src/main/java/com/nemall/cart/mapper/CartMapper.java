@@ -20,4 +20,13 @@ public interface CartMapper {
             @Param("userId") Long userId,
             @Param("productId") Long productId,
             @Param("quantity") Integer quantity);
+
+    int updateQuantity(
+            @Param("userId") Long userId,
+            @Param("productId") Long productId,
+            @Param("quantity") Integer quantity);
+
+    int deleteByUserIdAndProductId(
+            @Param("userId") Long userId,
+            @Param("productId") Long productId);
 }
