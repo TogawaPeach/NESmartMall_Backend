@@ -40,4 +40,64 @@
         ORDER BY created_at DESC, id DESC
     </select>
 
+    <resultMap id="orderDetailResultMap"
+               type="com.nemall.order.vo.OrderDetailVO"
+               autoMapping="false">
+        <id column="id" property="id" javaType="java.lang.Long"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="status_name" property="status"/>
+        <result column="created_at" property="createdAt" javaType="java.time.Instant"/>
+        <result column="paid_at" property="paidAt" javaType="java.time.Instant"/>
+        <result column="shipped_at" property="shippedAt" javaType="java.time.Instant"/>
+        <result column="completed_at" property="completedAt" javaType="java.time.Instant"/>
+        <result column="cancelled_at" property="cancelledAt" javaType="java.time.Instant"/>
+        <result column="goods_amount_fen" property="goodsAmountFen"/>
+        <result column="shipping_fee_fen" property="shippingFeeFen"/>
+        <result column="payable_amount_fen" property="payableAmountFen"/>
+        <result column="paid_amount_fen" property="paidAmountFen"/>
+        <association property="recipient"
+                     javaType="com.nemall.order.vo.OrderDetailVO$RecipientVO"
+                     autoMapping="false">
+            <result column="recipient_name" property="name"/>
+            <result column="recipient_phone" property="phone"/>
+            <result column="recipient_address" property="address"/>
+        </association>
+        <association property="logistics"
+                     javaType="com.nemall.order.vo.OrderDetailVO$LogisticsVO"
+                     notNullColumn="tracking_no"
+                     autoMapping="false">
+            <result column="tracking_no" property="trackingNo"/>
+        </association>
+    </resultMap>
+
+    <select id="selectByOrderNo" resultMap="orderDetailResultMap">
+        SELECT
+            id,
+            order_no,
+            CASE status
+                WHEN 0 THEN 'PENDING_PAYMENT'
+                WHEN 1 THEN 'PENDING_SHIPMENT'
+                WHEN 2 THEN 'PENDING_RECEIPT'
+                WHEN 3 THEN 'COMPLETED'
+                WHEN 4 THEN 'CANCELLED'
+                ELSE NULL
+            END AS status_name,
+            created_at,
+            paid_at,
+            shipped_at,
+            completed_at,
+            cancelled_at,
+            goods_amount_fen,
+            shipping_fee_fen,
+            payable_amount_fen,
+            paid_amount_fen,
+            recipient_name,
+            recipient_phone,
+            recipient_address,
+            NULLIF(TRIM(tracking_no), '') AS tracking_no
+        FROM mall_order
+        WHERE user_id = #{userId}
+          AND order_no = #{orderNo}
+    </select>
+
 </mapper>

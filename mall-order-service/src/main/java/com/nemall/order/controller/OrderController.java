@@ -2,9 +2,11 @@ package com.nemall.order.controller;
 
 import com.nemall.common.response.Result;
 import com.nemall.order.service.OrderService;
+import com.nemall.order.vo.OrderDetailVO;
 import com.nemall.order.vo.OrderVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,5 +29,14 @@ public class OrderController {
         List<OrderVO> orders = orderService.getOrders(status);
 
         return new Result<>(200, "OK", orders);
+    }
+
+    @GetMapping("/{orderNo}")
+    public Result<OrderDetailVO> getOrderDetail(
+            @PathVariable("orderNo") String orderNo) {
+
+        OrderDetailVO detail = orderService.getOrderDetail(orderNo);
+
+        return new Result<>(200, "OK", detail);
     }
 }
