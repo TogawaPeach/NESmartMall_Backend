@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.nemall.order.mapper.OrderItemMapper">
+
+    <resultMap id="orderItemResultMap"
+               type="com.nemall.order.entity.OrderItem">
+        <id column="id" property="id"/>
+        <result column="order_id" property="orderId"/>
+        <result column="product_id" property="productId"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_model" property="productModel"/>
+        <result column="cover_image_url" property="coverImageUrl"/>
+        <result column="unit_price_fen" property="unitPriceFen"/>
+        <result column="quantity" property="quantity"/>
+    </resultMap>
+
+    <select id="selectByOrderIds" resultMap="orderItemResultMap">
+        SELECT
+            id,
+            order_id,
+            product_id,
+            product_name,
+            product_model,
+            cover_image_url,
+            unit_price_fen,
+            quantity
+        FROM order_item
+        WHERE order_id IN
+        <foreach collection="orderIds"
+                 item="orderId"
+                 open="("
+                 separator=","
+                 close=")">
+            #{orderId}
+        </foreach>
+        ORDER BY order_id ASC, id ASC
+    </select>
+
+</mapper>

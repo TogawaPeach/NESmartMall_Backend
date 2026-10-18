@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.nemall.order.mapper.OrderMapper">
+
+    <resultMap id="orderResultMap"
+               type="com.nemall.order.vo.OrderVO">
+        <id column="id" property="id" javaType="java.lang.String"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="status_name" property="status"/>
+        <result column="created_at"
+                property="createdAt"
+                javaType="java.time.Instant"/>
+        <result column="payable_amount_fen" property="payableAmountFen"/>
+    </resultMap>
+
+    <select id="selectOrders" resultMap="orderResultMap">
+        SELECT
+            id,
+            order_no,
+            CASE status
+                WHEN 0 THEN 'PENDING_PAYMENT'
+                WHEN 1 THEN 'PENDING_SHIPMENT'
+                WHEN 2 THEN 'PENDING_RECEIPT'
+                WHEN 3 THEN 'COMPLETED'
+                WHEN 4 THEN 'CANCELLED'
+                ELSE NULL
+            END AS status_name,
+            created_at,
+            payable_amount_fen
+        FROM mall_order
+        WHERE user_id = #{userId}
+
+        <if test="statusCode != null">
+            AND status = #{statusCode}
+        </if>
+
+        ORDER BY created_at DESC, id DESC
+    </select>
+
+</mapper>

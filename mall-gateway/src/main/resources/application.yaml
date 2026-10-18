@@ -22,6 +22,10 @@ spring:
               uri: ${CART_SERVICE_URL:http://localhost:8083}
               predicates:
                 - Path=/api/cart/**
+            - id: order-service
+              uri: ${ORDER_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/orders/**
 
 server:
   port: ${GATEWAY_PORT:8080}

@@ -21,6 +21,7 @@
         <module>mall-auth-service</module>
         <module>mall-product-service</module>
         <module>mall-cart-service</module>
+        <module>mall-order-service</module>
         <module>mall-gateway</module>
     </modules>
 
@@ -30,6 +31,7 @@
         <mybatis-spring-boot.version>4.0.0</mybatis-spring-boot.version>
         <pagehelper.version>4.1.1</pagehelper.version>
         <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
+        <hutool.version>5.8.47</hutool.version>
     </properties>
 
     <dependencies>
@@ -42,6 +44,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-core</artifactId>
+                <version>${hutool.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.mybatis.spring.boot</groupId>
                 <artifactId>mybatis-spring-boot-starter</artifactId>

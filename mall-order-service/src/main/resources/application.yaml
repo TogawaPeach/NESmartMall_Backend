@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: mall-order-service
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+
+server:
+  port: ${ORDER_SERVICE_PORT:8084}
