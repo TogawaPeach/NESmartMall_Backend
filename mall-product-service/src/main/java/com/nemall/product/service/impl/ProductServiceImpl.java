@@ -3,6 +3,7 @@ package com.nemall.product.service.impl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.nemall.api.dto.ProductSummaryDTO;
+import com.nemall.api.dto.PurchaseItemsDTO;
 import com.nemall.product.entity.ProductDetailData;
 import com.nemall.product.exception.ProductBusinessException;
 import com.nemall.product.mapper.ProductMapper;
@@ -13,9 +14,11 @@ import com.nemall.product.vo.ProductPageVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -29,6 +32,61 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void restoreStock(PurchaseItemsDTO request) {
+
+        List<PurchaseItemsDTO.Item> items = request.getItems().stream()
+                .sorted(Comparator.comparing(
+                        PurchaseItemsDTO.Item::getProductId
+                ))
+                .toList();
+
+        for (PurchaseItemsDTO.Item item : items) {
+            int affectedRows = productMapper.restoreStock(
+                    item.getProductId(),
+                    item.getQuantity()
+            );
+
+            if (affectedRows != 1) {
+                throw new ProductBusinessException(
+                        409, "商品库存回补失败"
+                );
+            }
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<ProductSummaryDTO> deductStock(
+            PurchaseItemsDTO request) {
+
+        List<PurchaseItemsDTO.Item> items = request.getItems().stream()
+                .sorted(Comparator.comparing(
+                        PurchaseItemsDTO.Item::getProductId
+                ))
+                .toList();
+
+        for (PurchaseItemsDTO.Item item : items) {
+            int affectedRows = productMapper.deductStock(
+                    item.getProductId(),
+                    item.getQuantity()
+            );
+
+            if (affectedRows != 1) {
+                throw new ProductBusinessException(
+                        409, "商品不可购买、库存不足或购买数量不合法"
+                );
+            }
+        }
+
+        List<Long> ids = items.stream()
+                .map(PurchaseItemsDTO.Item::getProductId)
+                .toList();
+
+        return productMapper.selectByIds(ids);
+    }
 
     /** {@inheritDoc} */
     @Override

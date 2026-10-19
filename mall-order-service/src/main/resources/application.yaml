@@ -2,6 +2,89 @@ spring:
   application:
     name: mall-order-service
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:127.0.0.1}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: ${RABBITMQ_VHOST:nesmartmall}
+    username: ${RABBITMQ_USERNAME:nesmartmall}
+    password: ${RABBITMQ_PASSWORD}
+    connection-timeout: 3s
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+      retry:
+        enabled: false
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        prefetch: 1
+        retry:
+          enabled: true
+          stateless: true
+          # Spring Boot 4：首次消费之后再重试 2 次，总共 3 次。
+          max-retries: 2
+          initial-interval: 1s
+          multiplier: 2
+          max-interval: 2s
+
+  cloud:
+    loadbalancer:
+      retry:
+        enabled: false
+
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 2000
+            readTimeout: 5000
+
+      httpclient:
+        max-connections: 100
+        max-connections-per-route: 20
+        time-to-live: 60
+        time-to-live-unit: seconds
+
+        hc5:
+          enabled: true
+          connection-request-timeout: 1
+          connection-request-timeout-unit: seconds
+          socket-timeout: 5
+          socket-timeout-unit: seconds
+
+seata:
+  enabled: true
+  application-id: ${spring.application.name}
+  tx-service-group: nesmartmall_tx_group
+
+  enable-auto-data-source-proxy: true
+  data-source-proxy-mode: AT
+
+  config:
+    type: file
+
+  registry:
+    type: file
+
+  service:
+    vgroup-mapping:
+      nesmartmall_tx_group: default
+    grouplist:
+      default: ${SEATA_SERVER_ADDR:127.0.0.1:8091}
+
+  client:
+    tm:
+      # 创建订单的全局事务超时，与 15 分钟支付期限无关。
+      default-global-transaction-timeout: 60000
+
+mall:
+  order:
+    snowflake:
+      worker-id: ${ORDER_WORKER_ID:0}
+      datacenter-id: ${ORDER_DATACENTER_ID:0}
+
 mybatis:
   mapper-locations: classpath:mapper/*.xml
 

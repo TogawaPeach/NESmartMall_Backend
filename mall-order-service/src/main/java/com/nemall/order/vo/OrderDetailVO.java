@@ -1,6 +1,7 @@
 package com.nemall.order.vo;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 import java.time.Instant;
@@ -21,6 +22,11 @@ public class OrderDetailVO {
     private String status;
 
     private Instant createdAt;
+
+    /** 由创建时间加 15 分钟计算，不单独入库。 */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Instant payExpireAt;
+
     private Instant paidAt;
     private Instant shippedAt;
     private Instant completedAt;
@@ -55,7 +61,7 @@ public class OrderDetailVO {
 
         private String name;
 
-        /** 脱敏后的联系电话。 */
+        /** 入库时为完整联系电话，对外查询响应前脱敏。 */
         private String phone;
 
         private String address;

@@ -2,6 +2,7 @@ package com.nemall.product.controller;
 
 import com.nemall.api.dto.ProductBatchQueryDTO;
 import com.nemall.api.dto.ProductSummaryDTO;
+import com.nemall.api.dto.PurchaseItemsDTO;
 import com.nemall.common.response.Result;
 import com.nemall.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,24 @@ import java.util.List;
 public class InternalProductController {
 
     private final ProductService productService;
+
+    @PostMapping("/stock/restore")
+    public Result<Boolean> restoreStock(
+            @RequestBody PurchaseItemsDTO request) {
+
+        productService.restoreStock(request);
+        return new Result<>(200, "OK", true);
+    }
+
+    @PostMapping("/stock/deduct")
+    public Result<List<ProductSummaryDTO>> deductStock(
+            @RequestBody PurchaseItemsDTO request) {
+
+        List<ProductSummaryDTO> products =
+                productService.deductStock(request);
+
+        return new Result<>(200, "OK", products);
+    }
 
     @PostMapping("/batch")
     public Result<List<ProductSummaryDTO>> queryByIds(

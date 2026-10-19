@@ -8,6 +8,31 @@ spring:
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+seata:
+  enabled: true
+  application-id: ${spring.application.name}
+  tx-service-group: nesmartmall_tx_group
+
+  enable-auto-data-source-proxy: true
+  data-source-proxy-mode: AT
+
+  config:
+    type: file
+
+  registry:
+    type: file
+
+  service:
+    vgroup-mapping:
+      nesmartmall_tx_group: default
+    grouplist:
+      default: ${SEATA_SERVER_ADDR:127.0.0.1:8091}
+
+  client:
+    tm:
+      # 创建订单的全局事务超时，与 15 分钟支付期限无关。
+      default-global-transaction-timeout: 60000
+
 mybatis:
   # 加载 Mapper XML；其 namespace 和语句 ID 对应 Mapper 接口及方法。
   mapper-locations: classpath:mapper/*.xml

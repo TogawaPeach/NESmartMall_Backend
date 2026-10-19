@@ -5,6 +5,83 @@
 
 <mapper namespace="com.nemall.order.mapper.OrderMapper">
 
+    <select id="lockForPayment" resultType="java.lang.Long">
+        SELECT id
+        FROM mall_order
+        WHERE order_no = #{orderNo}
+          AND user_id = #{userId}
+        FOR UPDATE
+    </select>
+
+    <update id="pay">
+        UPDATE mall_order
+        SET status = 1,
+            paid_at = UTC_TIMESTAMP(3),
+            paid_amount_fen = payable_amount_fen,
+            updated_at = UTC_TIMESTAMP(3)
+        WHERE order_no = #{orderNo}
+          AND user_id = #{userId}
+          AND status = 0
+          AND created_at > DATE_SUB(UTC_TIMESTAMP(3), INTERVAL 15 MINUTE)
+    </update>
+
+    <update id="cancelExpired">
+        UPDATE mall_order
+        SET status = 4,
+            cancelled_at = UTC_TIMESTAMP(3),
+            updated_at = UTC_TIMESTAMP(3)
+        WHERE order_no = #{orderNo}
+          AND status = 0
+          AND created_at &lt;= DATE_SUB(UTC_TIMESTAMP(3), INTERVAL 15 MINUTE)
+    </update>
+
+    <select id="isPendingPayment" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM mall_order
+            WHERE order_no = #{orderNo}
+              AND status = 0
+        )
+    </select>
+
+    <select id="selectIdByOrderNo" resultType="java.lang.Long">
+        SELECT id
+        FROM mall_order
+        WHERE order_no = #{orderNo}
+    </select>
+
+    <insert id="insert"
+            useGeneratedKeys="true"
+            keyProperty="order.id"
+            keyColumn="id">
+        INSERT INTO mall_order (
+            order_no,
+            user_id,
+            status,
+            goods_amount_fen,
+            shipping_fee_fen,
+            payable_amount_fen,
+            recipient_name,
+            recipient_phone,
+            recipient_address,
+            created_at,
+            updated_at
+        )
+        VALUES (
+            #{order.orderNo},
+            #{userId},
+            0,
+            #{order.goodsAmountFen},
+            #{order.shippingFeeFen},
+            #{order.payableAmountFen},
+            #{order.recipient.name},
+            #{order.recipient.phone},
+            #{order.recipient.address},
+            #{order.createdAt},
+            #{order.createdAt}
+        )
+    </insert>
+
     <resultMap id="orderResultMap"
                type="com.nemall.order.vo.OrderVO">
         <id column="id" property="id" javaType="java.lang.String"/>
@@ -99,5 +176,14 @@
         WHERE user_id = #{userId}
           AND order_no = #{orderNo}
     </select>
+
+    <update id="confirmReceipt">
+        UPDATE mall_order
+        SET status = 3,
+            completed_at = CURRENT_TIMESTAMP(3)
+        WHERE order_no = #{orderNo}
+          AND user_id = #{userId}
+          AND status = 2
+    </update>
 
 </mapper>

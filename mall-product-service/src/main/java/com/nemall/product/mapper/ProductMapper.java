@@ -13,6 +13,16 @@ import java.util.List;
  */
 public interface ProductMapper {
 
+    /** 按订单原购买数量回补，不限制商品上架或逻辑删除状态。 */
+    int restoreStock(
+            @Param("productId") Long productId,
+            @Param("quantity") Integer quantity);
+
+    /** 仅扣减可售且库存充足的商品，返回影响行数。 */
+    int deductStock(
+            @Param("productId") Long productId,
+            @Param("quantity") Integer quantity);
+
     /**
      * 查询销量最高的商品卡片，仅包含未删除且已上架（status=1）的商品。
      *

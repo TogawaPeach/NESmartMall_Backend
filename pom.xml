@@ -32,6 +32,7 @@
         <pagehelper.version>4.1.1</pagehelper.version>
         <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
         <hutool.version>5.8.47</hutool.version>
+        <seata.version>2.6.0</seata.version>
     </properties>
 
     <dependencies>
@@ -44,6 +45,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.apache.seata</groupId>
+                <artifactId>seata-spring-boot-starter</artifactId>
+                <version>${seata.version}</version>
+            </dependency>
             <dependency>
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-core</artifactId>

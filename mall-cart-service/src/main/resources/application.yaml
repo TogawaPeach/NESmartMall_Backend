@@ -2,6 +2,21 @@ spring:
   application:
     name: mall-cart-service
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:127.0.0.1}
+    port: ${RABBITMQ_PORT:5672}
+    virtual-host: ${RABBITMQ_VHOST:nesmartmall}
+    username: ${RABBITMQ_USERNAME:nesmartmall}
+    password: ${RABBITMQ_PASSWORD}
+    connection-timeout: 3s
+
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        retry:
+          enabled: false
+
   cloud:
     loadbalancer:
       retry:

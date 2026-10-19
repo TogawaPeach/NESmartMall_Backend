@@ -5,6 +5,25 @@
 
 <mapper namespace="com.nemall.product.mapper.ProductMapper">
 
+    <update id="restoreStock">
+        UPDATE product
+        SET stock = stock + #{quantity}
+        WHERE id = #{productId}
+          AND #{quantity} > 0
+    </update>
+
+    <update id="deductStock">
+        UPDATE product
+        SET stock = stock - #{quantity}
+        WHERE id = #{productId}
+          AND status = 1
+          AND is_deleted = 0
+          AND price IS NOT NULL
+          AND price >= 0
+          AND #{quantity} > 0
+          AND stock >= #{quantity}
+    </update>
+
     <!-- 将数据库字段映射到商品卡片，显式处理封面地址、销量与 Java 属性名的差异。 -->
     <resultMap id="productCardMap"
                type="com.nemall.product.vo.ProductCardVO">
