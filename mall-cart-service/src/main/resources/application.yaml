@@ -15,7 +15,13 @@ spring:
         acknowledge-mode: auto
         default-requeue-rejected: false
         retry:
-          enabled: false
+          enabled: true
+          stateless: true
+          # 首次消费失败后再重试 3 次，总共最多执行 4 次。
+          max-retries: 3
+          initial-interval: 1s
+          multiplier: 2
+          max-interval: 2s
 
   cloud:
     loadbalancer:

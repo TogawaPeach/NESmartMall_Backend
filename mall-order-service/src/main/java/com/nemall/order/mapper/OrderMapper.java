@@ -20,11 +20,8 @@ public interface OrderMapper {
             @Param("userId") Long userId,
             @Param("orderNo") String orderNo);
 
-    /** 仅供内部超时处理：待付款且创建已满 15 分钟才允许取消。 */
+    /** 由延迟消息触发，仅取消待付款订单；到期时机由 MQ 控制。 */
     int cancelExpired(@Param("orderNo") String orderNo);
-
-    /** 区分提前到达的超时消息与已经结束的订单。 */
-    boolean isPendingPayment(@Param("orderNo") String orderNo);
 
     /** 内部关单后关联本单的商品成交快照。 */
     Long selectIdByOrderNo(@Param("orderNo") String orderNo);

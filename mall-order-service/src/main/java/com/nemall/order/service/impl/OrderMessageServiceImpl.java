@@ -14,15 +14,11 @@ import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.core.retry.RetryPolicy;
-import org.springframework.core.retry.RetryTemplate;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -34,15 +30,6 @@ import java.util.concurrent.TimeUnit;
 public class OrderMessageServiceImpl implements OrderMessageService {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
-    private static final RetryTemplate PUBLISH_RETRY = new RetryTemplate(
-            RetryPolicy.builder()
-                    .maxRetries(2)
-                    .delay(Duration.ofSeconds(1))
-                    .multiplier(2)
-                    .maxDelay(Duration.ofSeconds(2))
-                    .excludes(InterruptedException.class)
-                    .build()
-    );
 
     private final RabbitTemplate rabbitTemplate;
     private final ExecutorService orderMessageExecutor;
@@ -70,56 +57,27 @@ public class OrderMessageServiceImpl implements OrderMessageService {
         TransactionHookManager.registerHook(new TransactionHookAdapter() {
             @Override
             public void afterCommit() {
-                // 确认和重试在后台执行，不占用下单请求等待重试间隔。
-                orderMessageExecutor.execute(() -> sendTimeout(
-                        timeoutPayload, "TIMEOUT:" + orderNo, payExpireAt
+                // 在后台发送并等待确认，不阻塞下单请求。
+                orderMessageExecutor.execute(() -> send(
+                        OrderMqConfig.DELAY_KEY, timeoutPayload,
+                        "TIMEOUT:" + orderNo, payExpireAt
                 ));
-                orderMessageExecutor.execute(() -> sendCart(
-                        cartPayload, "CART:" + orderNo
+                orderMessageExecutor.execute(() -> send(
+                        OrderMqConfig.CART_KEY, cartPayload,
+                        "CART:" + orderNo, null
                 ));
             }
         });
     }
 
-    private void sendCart(Map<String, Object> payload, String messageId) {
+    private void send(String routingKey, Map<String, Object> payload,
+                      String messageId, Instant payExpireAt) {
         try {
-            publishConfirmed(OrderMqConfig.CART_KEY, payload, messageId, null);
+            publishConfirmed(routingKey, payload, messageId, payExpireAt);
         } catch (Exception exception) {
-            // 清购物车仍按本期约定尽力处理，不影响订单或超时消息。
-            log.error("清购物车消息发送失败，messageId={}", messageId, exception);
-        }
-    }
-
-    private void sendTimeout(Map<String, Object> payload,
-                             String messageId, Instant payExpireAt) {
-        try {
-            PUBLISH_RETRY.execute(() -> {
-                // 每次发送都按原截止时间重新计算剩余 TTL。
-                publishConfirmed(OrderMqConfig.DELAY_KEY,
-                        payload, messageId, payExpireAt);
-                return null;
-            });
-        } catch (Exception exception) {
-            log.error("超时消息发送重试耗尽，尝试保留到失败队列，messageId={}",
-                    messageId, exception);
-
-            Map<String, Object> failedPayload = new HashMap<>(payload);
-            failedPayload.put("failureStage", "PUBLISH_TIMEOUT");
-            failedPayload.put("failureReason", exception.toString());
-
-            try {
-                PUBLISH_RETRY.execute(() -> {
-                    // 失败队列没有 TTL，不自动重新消费。
-                    publishConfirmed(OrderMqConfig.FAILED_KEY,
-                            failedPayload, messageId, null);
-                    return null;
-                });
-            } catch (Exception recoveryException) {
-                // Broker 持续不可用时无法依靠同一个 MQ 保存失败记录。
-                // 本期不扫描、不落消息表，此处需按日志中的订单号人工处理。
-                log.error("超时消息也未能进入失败队列，需按订单号人工处理，messageId={}",
-                        messageId, recoveryException);
-            }
+            // 发送失败只记录日志；消费重试由监听容器统一处理。
+            log.error("订单消息发送失败，routingKey={}，messageId={}",
+                    routingKey, messageId, exception);
         }
     }
 
@@ -144,7 +102,7 @@ public class OrderMessageServiceImpl implements OrderMessageService {
             }
         }
 
-        // 每次发送使用独立的确认标识，业务 messageId 保持不变。
+        // 发送确认标识与业务消息标识分开。
         CorrelationData correlation = new CorrelationData();
         rabbitTemplate.send(OrderMqConfig.EXCHANGE, routingKey,
                 new Message(JSON.writeValueAsBytes(payload), properties),

@@ -32,17 +32,7 @@
             updated_at = UTC_TIMESTAMP(3)
         WHERE order_no = #{orderNo}
           AND status = 0
-          AND created_at &lt;= DATE_SUB(UTC_TIMESTAMP(3), INTERVAL 15 MINUTE)
     </update>
-
-    <select id="isPendingPayment" resultType="boolean">
-        SELECT EXISTS (
-            SELECT 1
-            FROM mall_order
-            WHERE order_no = #{orderNo}
-              AND status = 0
-        )
-    </select>
 
     <select id="selectIdByOrderNo" resultType="java.lang.Long">
         SELECT id

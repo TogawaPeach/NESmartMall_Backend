@@ -21,7 +21,7 @@ import com.nemall.order.vo.OrderVO;
 import lombok.RequiredArgsConstructor;
 import org.apache.seata.spring.annotation.GlobalTransactional;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -39,7 +39,6 @@ public class OrderServiceImpl implements OrderService {
     private final ProductClient productClient;
     private final OrderNoGenerator orderNoGenerator;
     private final OrderMessageService orderMessageService;
-    private final TransactionTemplate transactionTemplate;
 
     /**
      * 创建待付款订单并扣减库存，不在此处执行支付。
@@ -49,6 +48,7 @@ public class OrderServiceImpl implements OrderService {
             name = "create-order",
             rollbackFor = Exception.class
     )
+    @Transactional(rollbackFor = Exception.class)
     public OrderDetailVO createOrder(CreateOrderDTO request) {
 
         Long userId = UserContext.getUserId();
@@ -57,70 +57,66 @@ public class OrderServiceImpl implements OrderService {
         // 转换商品 ID、拒绝重复商品，并按商品 ID 排序。
         PurchaseItemsDTO purchase = buildPurchaseItems(request.getItems());
 
-        // Seata 管理跨服务事务；订单和明细使用同一本地事务。
-        return transactionTemplate.execute(transaction -> {
+        // 商品服务条件扣库存，并返回本次成交使用的权威商品快照。
+        List<ProductSummaryDTO> products = requireData(
+                productClient.deductStock(purchase)
+        );
 
-            // 商品服务条件扣库存，并返回本次成交使用的权威商品快照。
-            List<ProductSummaryDTO> products = requireData(
-                    productClient.deductStock(purchase)
-            );
+        Map<Long, Integer> quantities = purchase.getItems().stream()
+                .collect(Collectors.toMap(
+                        PurchaseItemsDTO.Item::getProductId,
+                        PurchaseItemsDTO.Item::getQuantity
+                ));
 
-            Map<Long, Integer> quantities = purchase.getItems().stream()
-                    .collect(Collectors.toMap(
-                            PurchaseItemsDTO.Item::getProductId,
-                            PurchaseItemsDTO.Item::getQuantity
-                    ));
+        List<OrderItem> items = products.stream()
+                .map(product -> {
+                    OrderItem item = BeanUtil.toBean(
+                            product,
+                            OrderItem.class,
+                            CopyOptions.create().setFieldMapping(Map.of(
+                                    "id", "productId",
+                                    "name", "productName",
+                                    "model", "productModel",
+                                    "coverUrl", "coverImageUrl",
+                                    "price", "unitPriceFen"
+                            ))
+                    );
 
-            List<OrderItem> items = products.stream()
-                    .map(product -> {
-                        OrderItem item = BeanUtil.toBean(
-                                product,
-                                OrderItem.class,
-                                CopyOptions.create().setFieldMapping(Map.of(
-                                        "id", "productId",
-                                        "name", "productName",
-                                        "model", "productModel",
-                                        "coverUrl", "coverImageUrl",
-                                        "price", "unitPriceFen"
-                                ))
-                        );
+                    item.setQuantity(quantities.get(product.getId()));
+                    return item;
+                })
+                .toList();
 
-                        item.setQuantity(quantities.get(product.getId()));
-                        return item;
-                    })
-                    .toList();
+        long goodsAmountFen = calculateGoodsAmount(items);
+        long shippingFeeFen = 0L;
 
-            long goodsAmountFen = calculateGoodsAmount(items);
-            long shippingFeeFen = 0L;
+        Instant createdAt = Instant.now()
+                .truncatedTo(ChronoUnit.MILLIS);
 
-            Instant createdAt = Instant.now()
-                    .truncatedTo(ChronoUnit.MILLIS);
+        OrderDetailVO order = new OrderDetailVO();
+        order.setOrderNo(orderNo);
+        order.setStatus("PENDING_PAYMENT");
+        order.setGoodsAmountFen(goodsAmountFen);
+        order.setShippingFeeFen(shippingFeeFen);
+        order.setPayableAmountFen(
+                Math.addExact(goodsAmountFen, shippingFeeFen)
+        );
+        order.setCreatedAt(createdAt);
+        order.setRecipient(BeanUtil.toBean(
+                request.getRecipient(),
+                OrderDetailVO.RecipientVO.class
+        ));
 
-            OrderDetailVO order = new OrderDetailVO();
-            order.setOrderNo(orderNo);
-            order.setStatus("PENDING_PAYMENT");
-            order.setGoodsAmountFen(goodsAmountFen);
-            order.setShippingFeeFen(shippingFeeFen);
-            order.setPayableAmountFen(
-                    Math.addExact(goodsAmountFen, shippingFeeFen)
-            );
-            order.setCreatedAt(createdAt);
-            order.setRecipient(BeanUtil.toBean(
-                    request.getRecipient(),
-                    OrderDetailVO.RecipientVO.class
-            ));
+        // MyBatis 回填订单自增主键。
+        orderMapper.insert(userId, order);
 
-            // MyBatis 回填订单自增主键。
-            orderMapper.insert(userId, order);
+        items.forEach(item -> item.setOrderId(order.getId()));
+        orderItemMapper.insertBatch(items);
 
-            items.forEach(item -> item.setOrderId(order.getId()));
-            orderItemMapper.insertBatch(items);
+        // 全局提交成功后直接发 MQ，不保存消息任务或购物车快照。
+        orderMessageService.sendAfterGlobalCommit(userId, order, items);
 
-            // 全局提交成功后直接发 MQ，不保存消息任务或购物车快照。
-            orderMessageService.sendAfterGlobalCommit(userId, order, items);
-
-            return getOrderDetail(orderNo);
-        });
+        return getOrderDetail(orderNo);
     }
 
     @Override

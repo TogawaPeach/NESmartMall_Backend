@@ -4,6 +4,7 @@ import com.nemall.common.response.Result;
 import com.nemall.order.dto.CreateOrderDTO;
 import com.nemall.order.service.OrderPaymentService;
 import com.nemall.order.service.OrderService;
+import com.nemall.order.service.OrderTimeoutService;
 import com.nemall.order.vo.OrderDetailVO;
 import com.nemall.order.vo.OrderVO;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -25,6 +27,20 @@ public class OrderController {
 
     private final OrderService orderService;
     private final OrderPaymentService orderPaymentService;
+    private final OrderTimeoutService orderTimeoutService;
+
+    /** 取消当前登录用户的待付款订单。 */
+    @PostMapping("/{orderNo}/cancel")
+    public Result<Map<String, Object>> cancel(
+            @PathVariable("orderNo") String orderNo) {
+
+        OrderDetailVO order = orderTimeoutService.cancelOrder(orderNo);
+
+        return new Result<>(200, "OK", Map.of(
+                "orderNo", order.getOrderNo(),
+                "status", order.getStatus()
+        ));
+    }
 
     /** 模拟支付当前用户的订单，不接入支付渠道。 */
     @PostMapping("/{orderNo}/pay")

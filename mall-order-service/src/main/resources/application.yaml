@@ -23,8 +23,8 @@ spring:
         retry:
           enabled: true
           stateless: true
-          # Spring Boot 4：首次消费之后再重试 2 次，总共 3 次。
-          max-retries: 2
+          # 首次消费失败后再重试 3 次，总共最多执行 4 次。
+          max-retries: 3
           initial-interval: 1s
           multiplier: 2
           max-interval: 2s
