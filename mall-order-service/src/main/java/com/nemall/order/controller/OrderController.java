@@ -44,12 +44,12 @@ public class OrderController {
 
     /** 模拟支付当前用户的订单，不接入支付渠道。 */
     @PostMapping("/{orderNo}/pay")
-    public Result<OrderDetailVO> pay(
+    public Result<Void> pay(
             @PathVariable("orderNo") String orderNo) {
 
-        OrderDetailVO detail = orderPaymentService.pay(orderNo);
+        orderPaymentService.pay(orderNo);
 
-        return new Result<>(200, "OK", detail);
+        return new Result<>(200, "OK", null);
     }
 
     /** 创建当前登录用户的待付款订单。 */

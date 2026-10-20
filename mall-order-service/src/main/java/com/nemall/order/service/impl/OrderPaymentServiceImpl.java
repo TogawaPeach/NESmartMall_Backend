@@ -5,7 +5,6 @@ import com.nemall.order.exception.OrderBusinessException;
 import com.nemall.order.mapper.OrderMapper;
 import com.nemall.order.service.OrderPaymentService;
 import com.nemall.order.service.OrderService;
-import com.nemall.order.vo.OrderDetailVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,28 +26,31 @@ public class OrderPaymentServiceImpl implements OrderPaymentService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public OrderDetailVO pay(String orderNo) {
+    public void pay(String orderNo) {
 
         Long userId = UserContext.getUserId();
 
         // 先取得行锁，再用下一条 SQL 的数据库时间判断期限。
-        Long orderId = orderMapper.lockForPayment(userId, orderNo);
-        if (orderId == null) {
+        if (orderMapper.lockForPayment(userId, orderNo) == null) {
             throw new OrderBusinessException(
                     404, "订单不存在或无法访问"
             );
         }
 
-        int affectedRows = orderMapper.pay(userId, orderNo);
-        OrderDetailVO detail = orderService.getOrderDetail(orderNo);
-
-        // 重复支付返回现有付款事实，不重复改状态、时间或扣库存。
-        if (affectedRows == 1
-                || PAID_STATUSES.contains(detail.getStatus())) {
-            return detail;
+        // 调用 Mapper，将待付款订单改为待发货。
+        int rows = orderMapper.pay(userId, orderNo);
+        if (rows == 1) {
+            return;
         }
 
-        if ("CANCELLED".equals(detail.getStatus())) {
+        String status = orderService.getOrderDetail(orderNo).getStatus();
+
+        // 已付款的订单重复请求，按成功处理。
+        if (PAID_STATUSES.contains(status)) {
+            return;
+        }
+
+        if ("CANCELLED".equals(status)) {
             throw new OrderBusinessException(409, "订单已取消");
         }
 
