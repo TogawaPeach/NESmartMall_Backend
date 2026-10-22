@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -32,9 +32,9 @@ public class ProductDetailVO {
     // null 表示当前查询尚未填充秒杀信息。
     private Boolean isSeckill;
 
-    private OffsetDateTime seckillStartTime;
+    private LocalDateTime seckillStartTime;
 
-    private OffsetDateTime seckillEndTime;
+    private LocalDateTime seckillEndTime;
 
     /** 保留普通商品查询使用的构造方法，新增秒杀字段默认不赋值。 */
     public ProductDetailVO(String id, String name, String model,

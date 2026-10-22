@@ -5,6 +5,42 @@
 
 <mapper namespace="com.nemall.product.mapper.SeckillMapper">
 
+    <resultMap id="seckillProductDetailMap"
+               type="com.nemall.product.vo.ProductDetailVO">
+        <id column="id" property="id" javaType="java.lang.String"/>
+        <result column="name" property="name"/>
+        <result column="model" property="model"/>
+        <result column="cover_image_url" property="coverUrl"/>
+        <result column="price" property="price"/>
+        <result column="sales_count" property="sales"/>
+        <result column="stock" property="stock"/>
+        <result column="detail_image_urls" property="detailImages"
+                typeHandler="com.nemall.product.handler.StringListJsonTypeHandler"/>
+        <result column="is_seckill" property="isSeckill"/>
+        <result column="seckill_start_time" property="seckillStartTime"/>
+        <result column="seckill_end_time" property="seckillEndTime"/>
+    </resultMap>
+
+    <select id="selectSeckillProductDetailById" resultMap="seckillProductDetailMap">
+        SELECT
+            id,
+            name,
+            model,
+            cover_image_url,
+            price,
+            sales_count,
+            stock,
+            detail_image_urls,
+            is_seckill,
+            seckill_start_time,
+            seckill_end_time
+        FROM product
+        WHERE id = #{id}
+          AND is_seckill = 1
+          AND status = 1
+          AND is_deleted = 0
+    </select>
+
     <select id="selectSeckillProducts"
             resultType="com.nemall.product.vo.SeckillProductVO">
         SELECT

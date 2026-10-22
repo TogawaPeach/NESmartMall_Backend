@@ -6,6 +6,7 @@ import com.nemall.api.dto.ProductSummaryDTO;
 import com.nemall.api.dto.PurchaseItemsDTO;
 import com.nemall.product.entity.ProductDetailData;
 import com.nemall.product.exception.ProductBusinessException;
+import com.nemall.product.handler.StringListJsonTypeHandler;
 import com.nemall.product.mapper.ProductMapper;
 import com.nemall.product.service.ProductService;
 import com.nemall.product.vo.ProductCardVO;
@@ -23,8 +24,6 @@ import org.redisson.client.codec.StringCodec;
 import org.redisson.client.protocol.ScoredEntry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -47,8 +46,6 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
     private final RedissonClient redissonClient;
-
-    private static final JsonMapper JSON = JsonMapper.builder().build();
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -296,12 +293,8 @@ public class ProductServiceImpl implements ProductService {
 
     private ProductDetailVO toProductDetailVO(ProductDetailData data) {
 
-        List<String> images = data.getDetailImageUrls() == null
-                ? List.of()
-                : JSON.readValue(
-                        data.getDetailImageUrls(),
-                        new TypeReference<List<String>>() {}
-                );
+        List<String> images = StringListJsonTypeHandler.parse(
+                data.getDetailImageUrls());
 
         return new ProductDetailVO(
                 data.getId().toString(),
