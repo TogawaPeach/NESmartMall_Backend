@@ -14,7 +14,8 @@
 
     <update id="deductStock">
         UPDATE product
-        SET stock = stock - #{quantity}
+        SET stock = stock - #{quantity},
+            sales_count = sales_count + #{quantity}
         WHERE id = #{productId}
           AND status = 1
           AND is_deleted = 0
@@ -95,6 +96,27 @@
         WHERE id = #{id}
         AND status = 1
         AND is_deleted = 0
+    </select>
+
+    <select id="selectProductDetailsByIds"
+            resultType="com.nemall.product.entity.ProductDetailData">
+        SELECT
+            id,
+            name,
+            model,
+            cover_image_url,
+            price,
+            sales_count,
+            stock,
+            detail_image_urls
+        FROM product
+        WHERE status = 1
+          AND is_deleted = 0
+          AND id IN
+        <foreach collection="ids" item="id"
+                 open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </select>
 
     <select id="selectByIds"
