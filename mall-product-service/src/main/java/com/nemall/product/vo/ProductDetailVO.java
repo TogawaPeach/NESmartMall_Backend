@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Data
@@ -27,4 +28,19 @@ public class ProductDetailVO {
     private Long stock;
 
     private List<String> detailImages;
+
+    // null 表示当前查询尚未填充秒杀信息。
+    private Boolean isSeckill;
+
+    private OffsetDateTime seckillStartTime;
+
+    private OffsetDateTime seckillEndTime;
+
+    /** 保留普通商品查询使用的构造方法，新增秒杀字段默认不赋值。 */
+    public ProductDetailVO(String id, String name, String model,
+                           String coverUrl, Long price, Long sales,
+                           Long stock, List<String> detailImages) {
+        this(id, name, model, coverUrl, price, sales, stock,
+                detailImages, null, null, null);
+    }
 }
