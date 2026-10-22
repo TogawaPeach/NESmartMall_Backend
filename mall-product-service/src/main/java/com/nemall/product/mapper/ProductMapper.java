@@ -1,7 +1,6 @@
 package com.nemall.product.mapper;
 
 import com.nemall.api.dto.ProductSummaryDTO;
-import com.nemall.product.entity.ProductDetailData;
 import com.nemall.product.vo.ProductCardVO;
 import com.nemall.product.vo.ProductDetailVO;
 import org.apache.ibatis.annotations.Param;
@@ -36,9 +35,9 @@ public interface ProductMapper {
             @Param("categoryId") Long categoryId,
             @Param("keyword") String keyword);
 
-    ProductDetailData selectProductDetailById(@Param("id") String id);
+    ProductDetailVO selectProductDetailById(@Param("id") String id);
 
-    List<ProductDetailData> selectProductDetailsByIds(
+    List<ProductDetailVO> selectProductDetailsByIds(
             @Param("ids") List<Long> ids);
 
     /** 批量查询商品摘要，保留下架和已删除商品供购物车判断状态。 */

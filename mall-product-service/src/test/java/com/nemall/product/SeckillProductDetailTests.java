@@ -12,6 +12,8 @@ import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.RowBounds;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.io.InputStream;
@@ -81,21 +83,32 @@ class SeckillProductDetailTests {
                 .andExpect(jsonPath("$.data").isEmpty());
     }
 
-    @Test
-    void mybatisMapsDatabaseColumnsDirectlyToCompleteDetail() throws Exception {
+    @ParameterizedTest
+    @CsvSource({
+            "SeckillMapper, selectSeckillProductDetailById, true",
+            "ProductMapper, selectProductDetailById, true",
+            "ProductMapper, selectProductDetailsByIds, true",
+            "ProductMapper, selectProductDetailById, false",
+            "ProductMapper, selectProductDetailsByIds, false"
+    })
+    void mybatisMapsDatabaseColumnsDirectlyToCompleteDetail(
+            String mapperName, String queryName, boolean isSeckill) throws Exception {
         Configuration config = new Configuration();
-        String resource = "mapper/SeckillMapper.xml";
+        String resource = "mapper/" + mapperName + ".xml";
         try (InputStream input = getClass().getClassLoader().getResourceAsStream(resource)) {
             new XMLMapperBuilder(input, config, resource, config.getSqlFragments()).parse();
         }
 
         MappedStatement mapping = config.getMappedStatement(
-                "com.nemall.product.mapper.SeckillMapper.selectSeckillProductDetailById");
-        var sql = mapping.getBoundSql(Map.of("id", 25L));
+                "com.nemall.product.mapper." + mapperName + "." + queryName);
+        var sql = mapping.getBoundSql(Map.of("id", "25", "ids", List.of(25L)));
         assertThat(sql.getSql())
-                .contains("WHERE id = ?", "AND is_seckill = 1",
-                        "AND status = 1", "AND is_deleted = 0")
+                .contains("is_seckill", "seckill_start_time", "seckill_end_time")
                 .doesNotContain("NOW(", "CURRENT_TIMESTAMP", "BETWEEN");
+        if (mapperName.equals("SeckillMapper")) {
+            assertThat(sql.getSql()).contains("WHERE id = ?", "AND is_seckill = 1",
+                    "AND status = 1", "AND is_deleted = 0");
+        }
 
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("id", 25L);
@@ -106,9 +119,11 @@ class SeckillProductDetailTests {
         row.put("sales_count", 7L);
         row.put("stock", 0L);
         row.put("detail_image_urls", "[\"detail1.jpg\",\"detail2.jpg\"]");
-        row.put("is_seckill", true);
-        row.put("seckill_start_time", LocalDateTime.parse("2026-10-22T16:00:00"));
-        row.put("seckill_end_time", LocalDateTime.parse("2026-10-30T16:00:00"));
+        row.put("is_seckill", isSeckill);
+        row.put("seckill_start_time", isSeckill
+                ? LocalDateTime.parse("2026-10-22T16:00:00") : null);
+        row.put("seckill_end_time", isSeckill
+                ? LocalDateTime.parse("2026-10-30T16:00:00") : null);
 
         DefaultResultSetHandler handler = new DefaultResultSetHandler(
                 null, mapping, null, null, sql, RowBounds.DEFAULT);
@@ -124,9 +139,14 @@ class SeckillProductDetailTests {
         assertThat(detail.getSales()).isEqualTo(7L);
         assertThat(detail.getStock()).isZero();
         assertThat(detail.getDetailImages()).containsExactly("detail1.jpg", "detail2.jpg");
-        assertThat(detail.getIsSeckill()).isTrue();
-        assertThat(detail.getSeckillStartTime()).isEqualTo("2026-10-22T16:00:00");
-        assertThat(detail.getSeckillEndTime()).isEqualTo("2026-10-30T16:00:00");
+        assertThat(detail.getIsSeckill()).isEqualTo(isSeckill);
+        if (isSeckill) {
+            assertThat(detail.getSeckillStartTime()).isEqualTo("2026-10-22T16:00:00");
+            assertThat(detail.getSeckillEndTime()).isEqualTo("2026-10-30T16:00:00");
+        } else {
+            assertThat(detail.getSeckillStartTime()).isNull();
+            assertThat(detail.getSeckillEndTime()).isNull();
+        }
     }
 
     @Test

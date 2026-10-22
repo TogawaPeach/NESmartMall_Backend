@@ -35,6 +35,23 @@
         <result column="sales_count" property="sales"/>
     </resultMap>
 
+    <!-- 单条与批量详情共用映射，秒杀信息和图片由 MyBatis 一并填充。 -->
+    <resultMap id="productDetailMap"
+               type="com.nemall.product.vo.ProductDetailVO">
+        <id column="id" property="id" javaType="java.lang.String"/>
+        <result column="name" property="name"/>
+        <result column="model" property="model"/>
+        <result column="cover_image_url" property="coverUrl"/>
+        <result column="price" property="price"/>
+        <result column="sales_count" property="sales"/>
+        <result column="stock" property="stock"/>
+        <result column="detail_image_urls" property="detailImages"
+                typeHandler="com.nemall.product.handler.StringListJsonTypeHandler"/>
+        <result column="is_seckill" property="isSeckill"/>
+        <result column="seckill_start_time" property="seckillStartTime"/>
+        <result column="seckill_end_time" property="seckillEndTime"/>
+    </resultMap>
+
 
     <!--
         仅查询已上架（status=1）且未删除的商品。销量相同时按 ID 升序，保证相同数据下顺序稳定。
@@ -81,8 +98,7 @@
         ORDER BY sales_count DESC, id ASC
     </select>
 
-    <select id="selectProductDetailById"
-            resultType="com.nemall.product.entity.ProductDetailData">
+    <select id="selectProductDetailById" resultMap="productDetailMap">
         SELECT
         id,
         name,
@@ -91,6 +107,9 @@
         price,
         sales_count,
         stock,
+        is_seckill,
+        seckill_start_time,
+        seckill_end_time,
         detail_image_urls
         FROM product
         WHERE id = #{id}
@@ -98,8 +117,7 @@
         AND is_deleted = 0
     </select>
 
-    <select id="selectProductDetailsByIds"
-            resultType="com.nemall.product.entity.ProductDetailData">
+    <select id="selectProductDetailsByIds" resultMap="productDetailMap">
         SELECT
             id,
             name,
@@ -108,6 +126,9 @@
             price,
             sales_count,
             stock,
+            is_seckill,
+            seckill_start_time,
+            seckill_end_time,
             detail_image_urls
         FROM product
         WHERE status = 1

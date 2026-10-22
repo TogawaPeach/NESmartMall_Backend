@@ -4,9 +4,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.nemall.api.dto.ProductSummaryDTO;
 import com.nemall.api.dto.PurchaseItemsDTO;
-import com.nemall.product.entity.ProductDetailData;
 import com.nemall.product.exception.ProductBusinessException;
-import com.nemall.product.handler.StringListJsonTypeHandler;
 import com.nemall.product.mapper.ProductMapper;
 import com.nemall.product.service.ProductService;
 import com.nemall.product.vo.ProductCardVO;
@@ -273,14 +271,12 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // 3. 缓存未命中，查询数据库。
-        ProductDetailData data =
+        ProductDetailVO detail =
                 productMapper.selectProductDetailById(id);
 
-        if (data == null) {
+        if (detail == null) {
             throw new ProductBusinessException(404, "商品不存在");
         }
-
-        ProductDetailVO detail = toProductDetailVO(data);
 
         // 4. 自动序列化为 JSON，并与过期时间一起写入 Redis。
         long ttlSeconds = 600L
@@ -289,23 +285,6 @@ public class ProductServiceImpl implements ProductService {
         bucket.set(detail, Duration.ofSeconds(ttlSeconds));
 
         return detail;
-    }
-
-    private ProductDetailVO toProductDetailVO(ProductDetailData data) {
-
-        List<String> images = StringListJsonTypeHandler.parse(
-                data.getDetailImageUrls());
-
-        return new ProductDetailVO(
-                data.getId().toString(),
-                data.getName(),
-                data.getModel(),
-                data.getCoverImageUrl(),
-                data.getPrice(),
-                data.getSalesCount(),
-                data.getStock(),
-                images
-        );
     }
 
     private Map<Long, ProductDetailVO> loadProductDetails(List<Long> ids) {
@@ -339,15 +318,13 @@ public class ProductServiceImpl implements ProductService {
 
         // 3. 所有缺失商品合并为一次数据库查询。
         if (!missingIds.isEmpty()) {
-            List<ProductDetailData> rows =
+            List<ProductDetailVO> details =
                     productMapper.selectProductDetailsByIds(missingIds);
 
-            for (ProductDetailData data : rows) {
-                ProductDetailVO detail = toProductDetailVO(data);
-
+            for (ProductDetailVO detail : details) {
                 RBucket<ProductDetailVO> bucket =
                         redissonClient.getBucket(
-                                "product:detail:" + data.getId()
+                                "product:detail:" + detail.getId()
                         );
 
                 long ttlSeconds = 600L
@@ -355,7 +332,7 @@ public class ProductServiceImpl implements ProductService {
 
                 bucket.set(detail, Duration.ofSeconds(ttlSeconds));
 
-                result.put(data.getId(), detail);
+                result.put(Long.valueOf(detail.getId()), detail);
             }
         }
 
