@@ -10,6 +10,7 @@ import com.nemall.product.service.ProductService;
 import com.nemall.product.vo.ProductCardVO;
 import com.nemall.product.vo.ProductDetailVO;
 import com.nemall.product.vo.ProductPageVO;
+import com.nemall.product.vo.ProductStatsVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.BatchOptions;
@@ -44,6 +45,11 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
     private final RedissonClient redissonClient;
+
+    @Override
+    public ProductStatsVO getProductStats() {
+        return productMapper.selectProductStats();
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)

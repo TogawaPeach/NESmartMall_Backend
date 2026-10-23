@@ -5,6 +5,7 @@ import com.nemall.api.dto.PurchaseItemsDTO;
 import com.nemall.product.vo.ProductCardVO;
 import com.nemall.product.vo.ProductDetailVO;
 import com.nemall.product.vo.ProductPageVO;
+import com.nemall.product.vo.ProductStatsVO;
 
 import java.util.List;
 
@@ -12,6 +13,9 @@ import java.util.List;
  * 商品列表查询业务，负责校验查询条件并提供展示数据。
  */
 public interface ProductService {
+
+    /** 查询商品数量统计。 */
+    ProductStatsVO getProductStats();
 
     /** 批量回补订单已扣库存，任一商品失败则整批回滚。 */
     void restoreStock(PurchaseItemsDTO request);

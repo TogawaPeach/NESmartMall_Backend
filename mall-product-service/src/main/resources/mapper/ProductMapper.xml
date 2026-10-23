@@ -5,6 +5,22 @@
 
 <mapper namespace="com.nemall.product.mapper.ProductMapper">
 
+    <resultMap id="productStatsMap"
+               type="com.nemall.product.vo.ProductStatsVO">
+        <result column="all_count" property="allCount"/>
+        <result column="on_sale_count" property="onSaleCount"/>
+        <result column="off_shelf_count" property="offShelfCount"/>
+    </resultMap>
+
+    <select id="selectProductStats" resultMap="productStatsMap">
+        SELECT
+            COUNT(*) AS all_count,
+            COUNT(CASE WHEN status = 1 THEN 1 END) AS on_sale_count,
+            COUNT(CASE WHEN status = 2 THEN 1 END) AS off_shelf_count
+        FROM product
+        WHERE is_deleted = 0
+    </select>
+
     <update id="restoreStock">
         UPDATE product
         SET stock = stock + #{quantity}

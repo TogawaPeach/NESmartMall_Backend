@@ -3,6 +3,7 @@ package com.nemall.product.mapper;
 import com.nemall.api.dto.ProductSummaryDTO;
 import com.nemall.product.vo.ProductCardVO;
 import com.nemall.product.vo.ProductDetailVO;
+import com.nemall.product.vo.ProductStatsVO;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -11,6 +12,9 @@ import java.util.List;
  * 商品查询 Mapper，SQL 和字段映射定义在 {@code mapper/ProductMapper.xml} 中。
  */
 public interface ProductMapper {
+
+    /** 统计未删除商品的全部、在售和下架数量。 */
+    ProductStatsVO selectProductStats();
 
     /** 按订单原购买数量回补，不限制商品上架或逻辑删除状态。 */
     int restoreStock(

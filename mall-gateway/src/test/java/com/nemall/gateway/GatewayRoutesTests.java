@@ -89,6 +89,45 @@ class GatewayRoutesTests {
     }
 
     @Test
+    void merchantCanAccessProductStatsWithVerifiedIdentity() throws Exception {
+        String authorization = "Bearer " + accessToken("42", List.of("MERCHANT"));
+        HttpResponse<String> response = send("GET", "/api/merchant/products/stats", "",
+                authorization, "user-info", "999", "user-role", "CUSTOMER");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).isEqualTo(
+                "product|GET|/api/merchant/products/stats|" + authorization + "|");
+        assertThat(response.headers().firstValue("X-Seen-User-Info")).contains("42");
+        assertThat(response.headers().firstValue("X-Seen-User-Role")).contains("MERCHANT");
+    }
+
+    @Test
+    void customerCannotAccessProductStatsWithForgedMerchantHeader() throws Exception {
+        HttpResponse<String> response = send("GET", "/api/merchant/products/stats", "",
+                AUTHORIZATION, "user-role", "MERCHANT");
+
+        assertThat(response.statusCode()).isEqualTo(403);
+        assertThat(response.body()).contains("\"code\":403", "\"message\":\"仅商家可访问\"", "\"data\":null");
+        assertThat(response.headers().firstValue("X-Seen-User-Role")).isEmpty();
+    }
+
+    @Test
+    void productStatsWithoutTokenIsUnauthorized() throws Exception {
+        HttpResponse<String> response = send("GET", "/api/merchant/products/stats", "", null);
+
+        assertThat(response.statusCode()).isEqualTo(401);
+        assertThat(response.headers().firstValue("X-Seen-User-Role")).isEmpty();
+    }
+
+    @Test
+    void productStatsWithInvalidTokenIsUnauthorized() throws Exception {
+        HttpResponse<String> response = send("GET", "/api/merchant/products/stats", "", "Bearer invalid-token");
+
+        assertThat(response.statusCode()).isEqualTo(401);
+        assertThat(response.headers().firstValue("X-Seen-User-Role")).isEmpty();
+    }
+
+    @Test
     void cartRequestReachesCartServiceAndPreservesQueryAndBearerHeader() throws Exception {
         HttpResponse<String> response = send("GET", "/api/cart?selected=true", "");
 

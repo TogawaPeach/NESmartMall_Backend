@@ -67,12 +67,20 @@ public class IdentityFilter extends OncePerRequestFilter {
             return;
         }
 
+        String role = jwt.getClaimAsStringList("roles").getFirst();
+
+        boolean productStatsRequest =
+                "GET".equals(request.getMethod())
+                && "/api/merchant/products/stats".equals(request.getRequestURI());
+
+        if (productStatsRequest && !"MERCHANT".equals(role)) {
+            forbidden(response);
+            return;
+        }
+
         // 从已验证的 JWT 提取身份，覆盖写入内部请求头
         forwardedRequest.setHeader("user-info", jwt.getSubject());
-        forwardedRequest.setHeader(
-                "user-role",
-                jwt.getClaimAsStringList("roles").getFirst()
-        );
+        forwardedRequest.setHeader("user-role", role);
 
         filterChain.doFilter(forwardedRequest, response);
     }
@@ -120,6 +128,19 @@ public class IdentityFilter extends OncePerRequestFilter {
         } catch (JwtException | IllegalArgumentException exception) {
             return null;
         }
+    }
+
+    private void forbidden(HttpServletResponse response)
+            throws IOException {
+
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+
+        objectMapper.writeValue(
+                response.getWriter(),
+                new Result<Void>(403, "仅商家可访问", null)
+        );
     }
 
     private void unauthorized(HttpServletResponse response)
