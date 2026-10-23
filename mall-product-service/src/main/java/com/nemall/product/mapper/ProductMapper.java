@@ -1,6 +1,7 @@
 package com.nemall.product.mapper;
 
 import com.nemall.api.dto.ProductSummaryDTO;
+import com.nemall.product.vo.AdminProductVO;
 import com.nemall.product.vo.ProductCardVO;
 import com.nemall.product.vo.ProductDetailVO;
 import com.nemall.product.vo.ProductStatsVO;
@@ -15,6 +16,9 @@ public interface ProductMapper {
 
     /** 统计未删除商品的全部、在售和下架数量。 */
     ProductStatsVO selectProductStats();
+
+    /** 按状态查询未删除商品，由 PageHelper 完成计数和分页。 */
+    List<AdminProductVO> selectMerchantProducts(@Param("status") String status);
 
     /** 按订单原购买数量回补，不限制商品上架或逻辑删除状态。 */
     int restoreStock(

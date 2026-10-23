@@ -2,6 +2,7 @@ package com.nemall.product.service;
 
 import com.nemall.api.dto.ProductSummaryDTO;
 import com.nemall.api.dto.PurchaseItemsDTO;
+import com.nemall.product.vo.AdminProductPageVO;
 import com.nemall.product.vo.ProductCardVO;
 import com.nemall.product.vo.ProductDetailVO;
 import com.nemall.product.vo.ProductPageVO;
@@ -16,6 +17,10 @@ public interface ProductService {
 
     /** 查询商品数量统计。 */
     ProductStatsVO getProductStats();
+
+    /** 按商品状态分页查询商家端商品。 */
+    AdminProductPageVO listMerchantProductsByPage(
+            Integer pageNum, Integer pageSize, String status);
 
     /** 批量回补订单已扣库存，任一商品失败则整批回滚。 */
     void restoreStock(PurchaseItemsDTO request);

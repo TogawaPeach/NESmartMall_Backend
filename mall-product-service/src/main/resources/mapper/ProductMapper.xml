@@ -21,6 +21,46 @@
         WHERE is_deleted = 0
     </select>
 
+    <resultMap id="adminProductMap"
+               type="com.nemall.product.vo.AdminProductVO">
+        <id column="id" property="id" javaType="java.lang.String"/>
+        <result column="cover_image_url" property="coverUrl"/>
+        <result column="name" property="name"/>
+        <result column="model" property="model"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="price" property="price"/>
+        <result column="stock" property="stock"/>
+        <result column="status" property="status"/>
+        <result column="is_seckill" property="isSeckill" javaType="java.lang.Boolean"/>
+        <result column="seckill_start_time" property="seckillStartTime"/>
+        <result column="seckill_end_time" property="seckillEndTime"/>
+    </resultMap>
+
+    <!-- 先筛选状态，再由 PageHelper 对同一条件计数和分页。 -->
+    <select id="selectMerchantProducts" resultMap="adminProductMap">
+        SELECT
+            id,
+            cover_image_url,
+            name,
+            model,
+            COALESCE(category_id, 0) AS category_id,
+            price,
+            stock,
+            status,
+            CASE WHEN is_seckill = 1 THEN 1 ELSE 0 END AS is_seckill,
+            CASE WHEN is_seckill = 1 THEN seckill_start_time ELSE NULL END AS seckill_start_time,
+            CASE WHEN is_seckill = 1 THEN seckill_end_time ELSE NULL END AS seckill_end_time
+        FROM product
+        WHERE is_deleted = 0
+        <if test="status == 'on-sale'">
+            AND status = 1
+        </if>
+        <if test="status == 'off-shelf'">
+            AND status = 2
+        </if>
+        ORDER BY id DESC
+    </select>
+
     <update id="restoreStock">
         UPDATE product
         SET stock = stock + #{quantity}

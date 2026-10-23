@@ -7,6 +7,8 @@ import com.nemall.api.dto.PurchaseItemsDTO;
 import com.nemall.product.exception.ProductBusinessException;
 import com.nemall.product.mapper.ProductMapper;
 import com.nemall.product.service.ProductService;
+import com.nemall.product.vo.AdminProductPageVO;
+import com.nemall.product.vo.AdminProductVO;
 import com.nemall.product.vo.ProductCardVO;
 import com.nemall.product.vo.ProductDetailVO;
 import com.nemall.product.vo.ProductPageVO;
@@ -49,6 +51,30 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductStatsVO getProductStats() {
         return productMapper.selectProductStats();
+    }
+
+    @Override
+    public AdminProductPageVO listMerchantProductsByPage(
+            Integer pageNum, Integer pageSize, String status) {
+
+        try {
+            PageHelper.startPage(pageNum, pageSize, true)
+                    .setReasonable(false);
+
+            List<AdminProductVO> products =
+                    productMapper.selectMerchantProducts(status);
+
+            PageInfo<AdminProductVO> pageInfo = new PageInfo<>(products);
+
+            return new AdminProductPageVO(
+                    pageInfo.getList(),
+                    pageInfo.getTotal(),
+                    pageNum,
+                    pageSize
+            );
+        } finally {
+            PageHelper.clearPage();
+        }
     }
 
     @Override
