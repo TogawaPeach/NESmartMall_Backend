@@ -54,6 +54,12 @@ spring:
           socket-timeout: 5
           socket-timeout-unit: seconds
 
+app:
+  redis:
+    address: ${REDIS_ADDRESS:redis://127.0.0.1:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DATABASE:0}
+
 seata:
   enabled: true
   application-id: ${spring.application.name}

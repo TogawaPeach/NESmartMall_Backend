@@ -2,9 +2,11 @@ package com.nemall.order.controller;
 
 import com.nemall.common.response.Result;
 import com.nemall.order.dto.CreateOrderDTO;
+import com.nemall.order.dto.CreateSeckillOrderDTO;
 import com.nemall.order.service.OrderPaymentService;
 import com.nemall.order.service.OrderService;
 import com.nemall.order.service.OrderTimeoutService;
+import com.nemall.order.service.SeckillOrderService;
 import com.nemall.order.vo.OrderDetailVO;
 import com.nemall.order.vo.OrderVO;
 import jakarta.validation.Valid;
@@ -28,6 +30,17 @@ public class OrderController {
     private final OrderService orderService;
     private final OrderPaymentService orderPaymentService;
     private final OrderTimeoutService orderTimeoutService;
+    private final SeckillOrderService seckillOrderService;
+
+    /** 提交秒杀购买请求，每次固定购买一件。 */
+    @PostMapping("/seckill")
+    public Result<Void> createSeckillOrder(
+            @RequestBody CreateSeckillOrderDTO request) throws Exception {
+
+        seckillOrderService.submit(request);
+
+        return new Result<>(200, "购买成功", null);
+    }
 
     /** 取消当前登录用户的待付款订单。 */
     @PostMapping("/{orderNo}/cancel")

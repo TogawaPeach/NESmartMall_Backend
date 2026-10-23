@@ -29,6 +29,27 @@
         </foreach>
     </insert>
 
+    <insert id="insertSeckillItem">
+        INSERT INTO order_item (
+            order_id,
+            product_id,
+            product_name,
+            product_model,
+            cover_image_url,
+            unit_price_fen,
+            quantity
+        )
+        VALUES (
+            #{orderId},
+            #{product.id},
+            #{product.name},
+            #{product.model},
+            #{product.coverUrl},
+            #{product.price},
+            1
+        )
+    </insert>
+
     <resultMap id="orderItemResultMap"
                type="com.nemall.order.entity.OrderItem">
         <id column="id" property="id"/>

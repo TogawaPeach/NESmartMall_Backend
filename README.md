@@ -2,6 +2,12 @@
 
 在原有 Spring Boot 项目上整理的 Maven 聚合工程。技术基线为 Java 21、Spring Boot 4.0.8、Spring Cloud 2025.1.3，保留原 Maven Wrapper。
 
+## 2026-10-23 秒杀下单实现更新
+
+已实现 `POST /api/orders/seckill`，采用 Redis Lua 预扣库存、RabbitMQ 专用队列和 Seata 事务异步建单。消费端每实例固定一个消费者，配合 `prefetch=1`、Spring AUTO ACK 控制并发；不使用 Redis 限速器，也不保证固定每秒处理数量。HTTP 200 表示消息已确认投递，不表示订单已创建。
+
+当前交付范围、用户联调反馈、构建记录和幂等/补偿/缓存隔离等未完成项见[秒杀实现交接](docs/seckill-implementation-2026-10-23.md)。下文较早的“订单下单尚未实现”等范围记录为历史描述，以实际源码和这份交接为准。
+
 ## 模块
 
 ```text

@@ -21,6 +21,8 @@ public class OrderMqConfig {
     public static final String DELAY_KEY = "order.payment.delay";
     public static final String TIMEOUT_QUEUE = "mall.order.payment.timeout.queue";
     public static final String TIMEOUT_KEY = "order.payment.timeout";
+    public static final String SECKILL_QUEUE = "mall.order.seckill.queue";
+    public static final String SECKILL_KEY = "order.seckill";
 
     @Bean(destroyMethod = "close")
     public ExecutorService orderMessageExecutor() {
@@ -37,11 +39,13 @@ public class OrderMqConfig {
                 .deadLetterRoutingKey(TIMEOUT_KEY)
                 .build();
         Queue timeout = QueueBuilder.durable(TIMEOUT_QUEUE).build();
+        Queue seckill = QueueBuilder.durable(SECKILL_QUEUE).build();
         return new Declarables(
-                exchange, cart, delay, timeout,
+                exchange, cart, delay, timeout, seckill,
                 BindingBuilder.bind(cart).to(exchange).with(CART_KEY),
                 BindingBuilder.bind(delay).to(exchange).with(DELAY_KEY),
-                BindingBuilder.bind(timeout).to(exchange).with(TIMEOUT_KEY)
+                BindingBuilder.bind(timeout).to(exchange).with(TIMEOUT_KEY),
+                BindingBuilder.bind(seckill).to(exchange).with(SECKILL_KEY)
         );
     }
 }
