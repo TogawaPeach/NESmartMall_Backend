@@ -30,7 +30,7 @@ public class SeckillServiceImpl implements SeckillService {
 
     private static final String CACHE_KEY = "product:seckill:{list}:data";
     private static final String LOCK_KEY = "product:seckill:{list}:lock";
-    private static final Duration LOGICAL_TTL = Duration.ofSeconds(120);
+    private static final Duration LOGICAL_TTL = Duration.ofSeconds(12000);
     private static final Duration LOCK_TTL = Duration.ofSeconds(10);
     private static final JsonMapper JSON = JsonMapper.builder().build();
 

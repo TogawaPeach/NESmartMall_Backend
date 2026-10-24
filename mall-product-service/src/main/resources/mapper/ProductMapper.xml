@@ -170,7 +170,6 @@
         FROM product
         WHERE id = #{id}
         AND status = 1
-        AND is_deleted = 0
     </select>
 
     <select id="selectProductDetailsByIds" resultMap="productDetailMap">

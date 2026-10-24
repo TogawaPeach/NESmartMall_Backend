@@ -24,7 +24,7 @@ public class ProductDetailData {
     // 接收数据库中的图片 JSON 文本
     private String detailImageUrls;
 
-    private Boolean isSeckill;
+    private Integer isSeckill;
 
     // 数据库 DATETIME 不包含时区，返回 VO 时再按约定时区转换。
     private LocalDateTime seckillStartTime;
