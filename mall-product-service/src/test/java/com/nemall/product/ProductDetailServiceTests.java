@@ -1,5 +1,6 @@
 package com.nemall.product;
 
+import com.nemall.product.cache.ProductBloomFilter;
 import com.nemall.product.mapper.ProductMapper;
 import com.nemall.product.service.impl.ProductServiceImpl;
 import com.nemall.product.vo.ProductDetailVO;
@@ -34,7 +35,8 @@ class ProductDetailServiceTests {
         when(redis.<ProductDetailVO>getBucket("product:detail:25")).thenReturn(bucket);
         when(mapper.selectProductDetailById("25")).thenReturn(detail);
 
-        ProductDetailVO result = new ProductServiceImpl(mapper, redis).getProductDetail("25");
+        ProductDetailVO result = new ProductServiceImpl(
+                mapper, redis, mock(ProductBloomFilter.class)).getProductDetail("25");
 
         assertThat(result).isSameAs(detail);
         assertThat(result.getIsSeckill()).isTrue();
@@ -61,7 +63,7 @@ class ProductDetailServiceTests {
         when(mapper.selectProductDetailsByIds(List.of(25L))).thenReturn(List.of(detail));
         when(redis.<ProductDetailVO>getBucket("product:detail:25")).thenReturn(bucket);
 
-        var cards = new ProductServiceImpl(mapper, redis)
+        var cards = new ProductServiceImpl(mapper, redis, mock(ProductBloomFilter.class))
                 .listProducts("sales_desc", 1, null);
 
         assertThat(cards).hasSize(1);

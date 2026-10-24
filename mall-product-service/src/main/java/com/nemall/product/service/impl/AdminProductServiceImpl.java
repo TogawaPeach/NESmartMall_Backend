@@ -1,5 +1,6 @@
 package com.nemall.product.service.impl;
 
+import com.nemall.product.cache.ProductBloomFilter;
 import com.nemall.product.dto.SaveProductDTO;
 import com.nemall.product.mapper.AdminProductMapper;
 import com.nemall.product.service.AdminProductService;
@@ -15,12 +16,14 @@ public class AdminProductServiceImpl implements AdminProductService {
 
     private final AdminProductMapper adminProductMapper;
     private final RedissonClient redissonClient;
+    private final ProductBloomFilter productBloomFilter;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void saveProduct(SaveProductDTO request) {
         if (request.getId() == null) {
             adminProductMapper.insertProduct(request);
+            productBloomFilter.add(request.getId());
         } else {
             adminProductMapper.updateProduct(request);
             redissonClient.getBucket("product:detail:" + request.getId()).delete();

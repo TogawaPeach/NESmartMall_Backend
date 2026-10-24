@@ -4,6 +4,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.nemall.api.dto.ProductSummaryDTO;
 import com.nemall.api.dto.PurchaseItemsDTO;
+import com.nemall.product.cache.ProductBloomFilter;
 import com.nemall.product.exception.ProductBusinessException;
 import com.nemall.product.mapper.ProductMapper;
 import com.nemall.product.service.ProductService;
@@ -47,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
     private final RedissonClient redissonClient;
+    private final ProductBloomFilter productBloomFilter;
 
     @Override
     public ProductStatsVO getProductStats() {
@@ -291,6 +293,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDetailVO getProductDetail(String id) {
+
+        productBloomFilter.check(id);
 
         // 1. 获取这个商品对应的缓存操作对象。
         String key = "product:detail:" + id;

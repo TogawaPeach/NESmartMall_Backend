@@ -14,6 +14,9 @@ import java.util.List;
  */
 public interface ProductMapper {
 
+    /** 查询全部商品 ID，供启动时预热布隆过滤器。 */
+    List<Long> selectAllProductIds();
+
     /** 统计未删除商品的全部、在售和下架数量。 */
     ProductStatsVO selectProductStats();
 

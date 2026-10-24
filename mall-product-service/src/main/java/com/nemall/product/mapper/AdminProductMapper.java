@@ -2,6 +2,7 @@ package com.nemall.product.mapper;
 
 import com.nemall.product.dto.SaveProductDTO;
 import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
 
@@ -30,6 +31,7 @@ public interface AdminProductMapper {
                 2, 0, 0
             )
             """)
+    @Options(useGeneratedKeys = true, keyProperty = "request.id", keyColumn = "id")
     int insertProduct(@Param("request") SaveProductDTO request);
 
     /** 修改未删除商品，保留详情图、商品类型、上下架状态及销量。 */
