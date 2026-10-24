@@ -35,6 +35,8 @@ public class IdentityFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
     private static final PathPattern PRODUCT_STATUS_PATH =
             new PathPatternParser().parse("/api/merchant/products/{id}/status");
+    private static final PathPattern PRODUCT_SAVE_PATH =
+            new PathPatternParser().parse("/api/merchant/products/save");
 
     private final JwtDecoder jwtDecoder;
     private final ObjectMapper objectMapper;
@@ -83,7 +85,12 @@ public class IdentityFilter extends OncePerRequestFilter {
                 && PRODUCT_STATUS_PATH.matches(
                         PathContainer.parsePath(request.getRequestURI()));
 
-        if ((productStatsRequest || productStatusRequest)
+        boolean productSaveRequest =
+                "POST".equals(request.getMethod())
+                && PRODUCT_SAVE_PATH.matches(
+                        PathContainer.parsePath(request.getRequestURI()));
+
+        if ((productStatsRequest || productStatusRequest || productSaveRequest)
                 && !"MERCHANT".equals(role)) {
             forbidden(response);
             return;

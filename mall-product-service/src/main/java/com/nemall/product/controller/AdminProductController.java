@@ -1,6 +1,7 @@
 package com.nemall.product.controller;
 
 import com.nemall.common.response.Result;
+import com.nemall.product.dto.SaveProductDTO;
 import com.nemall.product.dto.UpdateProductStatusDTO;
 import com.nemall.product.service.AdminProductService;
 import com.nemall.product.service.ProductService;
@@ -25,6 +26,12 @@ public class AdminProductController {
 
     private final AdminProductService adminProductService;
     private final ProductService productService;
+
+    @PostMapping("/save")
+    public Result<Void> saveProduct(@RequestBody SaveProductDTO request) {
+        adminProductService.saveProduct(request);
+        return new Result<>(200, "OK", null);
+    }
 
     /**
      * 接收商品上下架请求，商家角色由 gateway 校验。
