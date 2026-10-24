@@ -81,11 +81,41 @@ class GatewayRoutesTests {
 
     @Test
     void merchantRequestReachesProductServiceAndPreservesMethodAndBody() throws Exception {
-        HttpResponse<String> response = send("PATCH", "/api/merchant/products/42/status", "{\"status\":2}");
+        String authorization = "Bearer " + accessToken("42", List.of("MERCHANT"));
+        HttpResponse<String> response = send("POST", "/api/merchant/products/19/status", "{\"status\":2}",
+                authorization, "user-info", "999", "user-role", "CUSTOMER");
 
         assertThat(response.statusCode()).isEqualTo(200);
         assertThat(response.body()).isEqualTo(
-                "product|PATCH|/api/merchant/products/42/status|" + AUTHORIZATION + "|{\"status\":2}");
+                "product|POST|/api/merchant/products/19/status|" + authorization + "|{\"status\":2}");
+        assertThat(response.headers().firstValue("X-Seen-User-Info")).contains("42");
+        assertThat(response.headers().firstValue("X-Seen-User-Role")).contains("MERCHANT");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/api/merchant/products/19/status",
+            "/api/merchant/products/19/status;x=1"
+    })
+    void customerCannotChangeProductStatusWithForgedMerchantHeader(String path) throws Exception {
+        HttpResponse<String> response = send("POST", path, "{\"status\":2}",
+                AUTHORIZATION, "user-role", "MERCHANT");
+
+        assertThat(response.statusCode()).isEqualTo(403);
+        assertThat(response.body()).contains("\"code\":403");
+        assertThat(response.headers().firstValue("X-Seen-User-Role")).isEmpty();
+    }
+
+    @Test
+    void statusChangeWithoutTokenIsUnauthorized() throws Exception {
+        assertThat(send("POST", "/api/merchant/products/19/status", "{\"status\":2}", null)
+                .statusCode()).isEqualTo(401);
+    }
+
+    @Test
+    void statusChangeWithInvalidTokenIsUnauthorized() throws Exception {
+        assertThat(send("POST", "/api/merchant/products/19/status", "{\"status\":2}", "Bearer invalid-token")
+                .statusCode()).isEqualTo(401);
     }
 
     @Test

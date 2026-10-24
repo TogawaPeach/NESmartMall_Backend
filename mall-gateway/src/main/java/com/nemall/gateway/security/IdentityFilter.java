@@ -10,11 +10,14 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.PathContainer;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.pattern.PathPattern;
+import org.springframework.web.util.pattern.PathPatternParser;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -30,6 +33,8 @@ import java.util.List;
 public class IdentityFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
+    private static final PathPattern PRODUCT_STATUS_PATH =
+            new PathPatternParser().parse("/api/merchant/products/{id}/status");
 
     private final JwtDecoder jwtDecoder;
     private final ObjectMapper objectMapper;
@@ -73,7 +78,13 @@ public class IdentityFilter extends OncePerRequestFilter {
                 "GET".equals(request.getMethod())
                 && "/api/merchant/products/stats".equals(request.getRequestURI());
 
-        if (productStatsRequest && !"MERCHANT".equals(role)) {
+        boolean productStatusRequest =
+                "POST".equals(request.getMethod())
+                && PRODUCT_STATUS_PATH.matches(
+                        PathContainer.parsePath(request.getRequestURI()));
+
+        if ((productStatsRequest || productStatusRequest)
+                && !"MERCHANT".equals(role)) {
             forbidden(response);
             return;
         }
