@@ -44,6 +44,7 @@ class GatewayRoutesTests {
     private static final HttpServer AUTH_SERVER = upstream("auth");
     private static final HttpServer PRODUCT_SERVER = upstream("product");
     private static final HttpServer CART_SERVER = upstream("cart");
+    private static final HttpServer SUPPORT_SERVER = upstream("support");
 
     @LocalServerPort
     private int port;
@@ -53,6 +54,7 @@ class GatewayRoutesTests {
         registry.add("AUTH_SERVICE_URL", () -> url(AUTH_SERVER));
         registry.add("PRODUCT_SERVICE_URL", () -> url(PRODUCT_SERVER));
         registry.add("CART_SERVICE_URL", () -> url(CART_SERVER));
+        registry.add("SUPPORT_SERVICE_URL", () -> url(SUPPORT_SERVER));
         registry.add("jwt.secret", () -> JWT_SECRET);
     }
 
@@ -61,6 +63,7 @@ class GatewayRoutesTests {
         AUTH_SERVER.stop(0);
         PRODUCT_SERVER.stop(0);
         CART_SERVER.stop(0);
+        SUPPORT_SERVER.stop(0);
     }
 
     @Test
@@ -185,6 +188,42 @@ class GatewayRoutesTests {
     @Test
     void cartRequestWithInvalidTokenIsUnauthorized() throws Exception {
         assertThat(send("GET", "/api/cart/items", "", "Bearer invalid-token").statusCode()).isEqualTo(401);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/guide/turns/stream", "/api/support/turns/stream"})
+    void supportStreamReceivesMessageAndVerifiedIdentity(String path) throws Exception {
+        String authorization = "Bearer " + accessToken("42", List.of("CUSTOMER"));
+        HttpResponse<String> response = send("POST", path, "{\"text\":\"test\"}", authorization,
+                "user-info", "999", "user-info", "888", "user-role", "MERCHANT",
+                "X-Service-Token", "external-forged-value");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).isEqualTo(
+                "support|POST|" + path + "|" + authorization + "|{\"text\":\"test\"}");
+        assertThat(response.headers().firstValue("X-Seen-User-Info")).contains("42");
+        assertThat(response.headers().firstValue("X-Seen-User-Role")).contains("CUSTOMER");
+        assertThat(response.headers().firstValue("X-Seen-Service-Token").orElse("")).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/guide/turns/stream", "/api/support/turns/stream"})
+    void supportStreamRequiresValidToken(String path) throws Exception {
+        HttpResponse<String> missingToken = send("POST", path, "{\"text\":\"test\"}", null,
+                "user-info", "999");
+        HttpResponse<String> invalidToken = send("POST", path, "{\"text\":\"test\"}", "Bearer invalid-token",
+                "user-info", "999");
+
+        assertThat(missingToken.statusCode()).isEqualTo(401);
+        assertThat(invalidToken.statusCode()).isEqualTo(401);
+        assertThat(missingToken.headers().firstValue("X-Seen-User-Info")).isEmpty();
+        assertThat(invalidToken.headers().firstValue("X-Seen-User-Info")).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/guide/turns/stream", "/api/support/turns/stream"})
+    void supportStreamDoesNotRouteGetRequests(String path) throws Exception {
+        assertThat(send("GET", path, "").statusCode()).isEqualTo(404);
     }
 
     @ParameterizedTest

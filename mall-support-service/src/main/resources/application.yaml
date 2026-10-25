@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: mall-support-service
+
+  main:
+    web-application-type: servlet
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:35dedee9-72e6-40f8-8f7b-5289ba194e79}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        username: ${NACOS_USERNAME:}
+        password: ${NACOS_PASSWORD:}
+
+    loadbalancer:
+      retry:
+        enabled: false
+
+server:
+  port: ${SUPPORT_SERVICE_PORT:8085}
