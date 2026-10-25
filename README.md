@@ -37,24 +37,6 @@ NESmartMall
 └── mall-common           # 统一响应与用户上下文
 ```
 
-## 智能导购与客服
-
-`mall-support-service` 统一承接导购与客服请求，按入口调用独立 Python 服务 `mall-agent-service` 的对应接口：
-
-| 入口 | Gateway 对外接口 | Python 内部接口 |
-| --- | --- | --- |
-| 智能导购 | `POST /api/guide/turns/stream` | `POST /internal/guide/turns/stream` |
-| 客服咨询 | `POST /api/support/turns/stream` | `POST /internal/support/turns/stream` |
-
-前端携带 `Authorization: Bearer <token>`，以 JSON 发送本轮消息 `{"text":"用户的问题"}`。网关完成 JWT 校验并传递可信用户身份，客服服务向 Python 发送 `userId` 与本轮 `text`，通过 WebClient 接收 SSE，再由 Spring MVC 的 SseEmitter 向前端逐段输出。
-
-```text
-前端 → Gateway:8080 → mall-support-service:8085 → mall-agent-service:8090
-前端 ← Gateway      ← SseEmitter               ← Python SSE
-```
-
-Python Agent 独立于本 Maven 工程运行，客服服务通过 Nacos 与 LoadBalancer 按服务名发现并调用实例。
-
 ## 本地运行
 
 1. 准备 JDK 21、MySQL、Redis、Nacos、RabbitMQ 和 Seata，以及已有业务表。当前仓库未附完整建库脚本。
