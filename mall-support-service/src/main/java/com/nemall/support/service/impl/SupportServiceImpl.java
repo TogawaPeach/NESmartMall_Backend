@@ -27,13 +27,13 @@ public class SupportServiceImpl implements SupportService {
     private final AgentClient agentClient;
 
     @Override
-    public SseEmitter streamGuide(Long userId, String text) {
-        return forward(agentClient.streamGuide(userId, text));
+    public SseEmitter streamGuide(Long userId, String text, String authorization) {
+        return forward(agentClient.streamGuide(userId, text, authorization));
     }
 
     @Override
-    public SseEmitter streamSupport(Long userId, String text) {
-        return forward(agentClient.streamSupport(userId, text));
+    public SseEmitter streamSupport(Long userId, String text, String authorization) {
+        return forward(agentClient.streamSupport(userId, text, authorization));
     }
 
     private SseEmitter forward(Flux<AgentEventDTO> events) {

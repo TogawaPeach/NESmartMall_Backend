@@ -3,6 +3,7 @@ package com.nemall.support.client;
 import com.nemall.support.dto.AgentEventDTO;
 import com.nemall.support.dto.AgentTurnDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -14,32 +15,36 @@ public class AgentClient {
 
     private final WebClient agentWebClient;
 
-    public Flux<AgentEventDTO> streamGuide(Long userId, String text) {
+    public Flux<AgentEventDTO> streamGuide(Long userId, String text, String authorization) {
         return stream(
                 "/internal/guide/turns/stream",
                 userId,
-                text
+                text,
+                authorization
         );
     }
 
-    public Flux<AgentEventDTO> streamSupport(Long userId, String text) {
+    public Flux<AgentEventDTO> streamSupport(Long userId, String text, String authorization) {
         return stream(
                 "/internal/support/turns/stream",
                 userId,
-                text
+                text,
+                authorization
         );
     }
 
     private Flux<AgentEventDTO> stream(
             String path,
             Long userId,
-            String text) {
+            String text,
+            String authorization) {
 
         AgentTurnDTO request =
                 new AgentTurnDTO(userId.toString(), text);
 
         return agentWebClient.post()
                 .uri(path)
+                .header(HttpHeaders.AUTHORIZATION, authorization)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .bodyValue(request)
