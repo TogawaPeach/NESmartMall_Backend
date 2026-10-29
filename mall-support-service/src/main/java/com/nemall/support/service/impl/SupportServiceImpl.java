@@ -2,10 +2,14 @@ package com.nemall.support.service.impl;
 
 import com.nemall.support.client.AgentClient;
 import com.nemall.support.dto.AgentEventDTO;
+import com.nemall.support.dto.HandoffResultDTO;
 import com.nemall.support.service.SupportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.Disposable;
 import reactor.core.Disposables;
@@ -34,6 +38,34 @@ public class SupportServiceImpl implements SupportService {
     @Override
     public SseEmitter streamSupport(Long userId, String text, String authorization) {
         return forward(agentClient.streamSupport(userId, text, authorization));
+    }
+
+    @Override
+    public HandoffResultDTO createSupportTicket(
+            Long userId, String actionId, String authorization) {
+        try {
+            HandoffResultDTO result = agentClient
+                    .createSupportTicket(userId, actionId, authorization)
+                    .block(Duration.ofSeconds(120));
+            if (result == null) {
+                throw new IllegalStateException("Python 未返回工单结果");
+            }
+            return result;
+        } catch (WebClientResponseException exception) {
+            if (exception.getStatusCode().value() == 410) {
+                throw new ResponseStatusException(
+                        HttpStatus.GONE, "申请入口已过期，请重新提出人工服务请求。"
+                );
+            }
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE, "提交失败，请稍后重试。"
+            );
+        } catch (RuntimeException exception) {
+            log.warn("人工服务申请提交失败：{}", exception.getClass().getSimpleName());
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE, "提交失败，请稍后重试。"
+            );
+        }
     }
 
     private SseEmitter forward(Flux<AgentEventDTO> events) {
@@ -89,7 +121,8 @@ public class SupportServiceImpl implements SupportService {
                     || event.getPayload().getText() == null) {
                 throw new IllegalStateException("Python delta 缺少文本");
             }
-        } else if (!"done".equals(event.getType())) {
+        } else if (!"done".equals(event.getType())
+                && !"action".equals(event.getType())) {
             throw new IllegalStateException("Python 返回异常事件");
         }
 

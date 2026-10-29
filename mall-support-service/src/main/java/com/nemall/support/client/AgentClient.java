@@ -1,13 +1,16 @@
 package com.nemall.support.client;
 
 import com.nemall.support.dto.AgentEventDTO;
+import com.nemall.support.dto.AgentHandoffDTO;
 import com.nemall.support.dto.AgentTurnDTO;
+import com.nemall.support.dto.HandoffResultDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Component
 @RequiredArgsConstructor
@@ -31,6 +34,18 @@ public class AgentClient {
                 text,
                 authorization
         );
+    }
+
+    public Mono<HandoffResultDTO> createSupportTicket(
+            Long userId, String actionId, String authorization) {
+
+        return agentWebClient.post()
+                .uri("/internal/support/tickets")
+                .header(HttpHeaders.AUTHORIZATION, authorization)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(new AgentHandoffDTO(userId.toString(), actionId))
+                .retrieve()
+                .bodyToMono(HandoffResultDTO.class);
     }
 
     private Flux<AgentEventDTO> stream(

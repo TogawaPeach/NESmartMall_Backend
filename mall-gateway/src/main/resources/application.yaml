@@ -33,7 +33,7 @@ spring:
             - id: support-service
               uri: ${SUPPORT_SERVICE_URL:http://localhost:8085}
               predicates:
-                - Path=/api/guide/turns/stream,/api/support/turns/stream
+                - Path=/api/guide/turns/stream,/api/support/turns/stream,/api/support/tickets
                 - Method=POST
 
 server:

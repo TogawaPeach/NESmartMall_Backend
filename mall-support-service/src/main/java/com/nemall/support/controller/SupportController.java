@@ -1,6 +1,9 @@
 package com.nemall.support.controller;
 
+import com.nemall.common.response.Result;
 import com.nemall.support.dto.ChatTurnDTO;
+import com.nemall.support.dto.HandoffRequestDTO;
+import com.nemall.support.dto.HandoffResultDTO;
 import com.nemall.support.service.SupportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -36,5 +39,17 @@ public class SupportController {
             @RequestBody ChatTurnDTO request) {
 
         return supportService.streamSupport(userId, request.getText(), authorization);
+    }
+
+    @PostMapping("/support/tickets")
+    public Result<HandoffResultDTO> createSupportTicket(
+            @RequestHeader("user-info") Long userId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorization,
+            @RequestBody HandoffRequestDTO request) {
+
+        HandoffResultDTO result = supportService.createSupportTicket(
+                userId, request.getActionId(), authorization
+        );
+        return new Result<>(200, "OK", result);
     }
 }
